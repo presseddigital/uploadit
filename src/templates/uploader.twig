@@ -1,3 +1,32 @@
+{% set id = uploader.id ?? ('asset'~random()) %}
+{% set name = uploader.name ?? null %}
+{% set multiple = uploader.multiple ?? false %}
+{% set assets = uploader.assets ?? [] %}
+
+{% set wrapperAttributes = {
+    id: id,
+    type: 'file',
+    name: name,
+    multiple: multiple
+}|merge(wrapperAttributes ?? {})|filter(v => v is not null) %}
+
+{% set inputAttributes = {
+    id: id,
+    type: 'file',
+    name: name,
+    multiple: multiple
+}|filter(v => v is not null) %}
+
+<div {{ attr(wrapperAttributes)}}>
+    <input {{ attr(inputAttributes) }} />
+</div>
+
+{% js %}
+    console.log('Initilized Uploader', '{{ id }}');
+{% endjs %}
+
+{#
+
 {% import "uploadit/_macros" as macros %}
 
 {% set uploader = uploader ?? false %}
@@ -82,4 +111,4 @@
         {% endif %}
     </div>
 
-{% endif %}
+{% endif %} #}

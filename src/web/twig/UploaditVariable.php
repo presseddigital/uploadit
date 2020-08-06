@@ -3,7 +3,11 @@ namespace presseddigital\uploadit\web\twig;
 
 use presseddigital\uploadit\Uploadit;
 
+use presseddigital\uploadit\assetbundles\uploadit\UploaditAssetBundle;
+
+
 use Craft;
+use craft\web\View;
 use yii\di\ServiceLocator;
 
 class UploaditVariable extends ServiceLocator
@@ -27,8 +31,17 @@ class UploaditVariable extends ServiceLocator
 
     public function field()
     {
-        Craft::dd('OUTPUT FIELD UPLOADER');
-        return $this->plugin;
+        $view = Craft::$app->getView();
+        $view->registerAssetBundle(UploaditAssetBundle::class);
+
+        $templateMode = $view->getTemplateMode();
+        $view->setTemplateMode(View::TEMPLATE_MODE_CP);
+        $html = $view->renderTemplate('uploadit/uploader', [
+            'uploader' => []
+        ]);
+        $view->setTemplateMode($templateMode);
+
+        return $html;
     }
 
     // Volume Uploader

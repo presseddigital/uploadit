@@ -1,11 +1,7 @@
 <?php
 namespace presseddigital\uploadit\assetbundles\uploadit;
 
-use Craft;
-
 use yii\web\AssetBundle;
-use craft\web\assets\cp\CpAsset;
-
 
 class UploaditAssetBundle extends AssetBundle
 {
@@ -14,22 +10,10 @@ class UploaditAssetBundle extends AssetBundle
 
     public function init()
     {
-        $this->sourcePath = "@presseddigital/uploadit/assetbundles/uploadit/build";
-
+        $this->sourcePath = "https://unpkg.com/filepond/dist/";
         $this->depends = [];
-
-        $this->js = [
-            'js/vendor/polyfill.js',
-            'js/vendor/ready.js',
-            'js/vendor/extend.js',
-            'js/vendor/Sortable.js',
-            'js/Uploadit.js',
-        ];
-
-        $this->css = [
-            'css/styles.css',
-        ];
-
+        $this->js = ['filepond.js'];
+        $this->css = ['filepond.css'];
         parent::init();
     }
 }
