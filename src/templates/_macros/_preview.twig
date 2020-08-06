@@ -1,0 +1,76 @@
+{% import "uploadit/_macros" as macros %}
+
+{% set asset = asset ?? false %}
+{% set name = name ?? false %}
+{% set transform = transform ?? false %}
+{% set enableRemove = enableRemove ?? false %}
+{% set view = view ?? 'auto' %}
+
+{% if asset %}
+
+    {% set view = asset.kind != 'image' ? 'file' : (view == 'auto' ? 'image' : view) %}
+
+    {% if not transform %}
+        {% set transform = {
+            mode: 'crop',
+            width: 400,
+            height: 400,
+            quality: 90,
+            position: 'center-center'
+        } %}
+    {% endif %}
+
+    {% set classes = [
+        'uploadit--asset',
+        'uploadit--assetPreview-' ~ view,
+    ]|filter|join(' ') %}
+
+    {% set assetUrl = asset.url ? asset.url(transform) : asset.getThumbUrl(800) %}
+
+    {% set attributes = [
+        view == 'background' ? 'style="background-image: url('~assetUrl~');"' : null,
+    ]|filter|join(' ') %}
+
+    <li class="{{ classes }}" {{ attributes|raw }}>
+
+        <span class="uploadit--icon">
+            {% switch view %}
+
+                {% case "file" %}
+
+                    {{ macros.icon('file') }}
+                    <span class="uploadit--filename">{{ asset.filename }}</span>
+
+                {% case "image" %}
+
+                    <img src="{{ assetUrl }}" alt="{{ asset.title }}" />
+                    <span class="uploadit--filename">{{ asset.filename }}</span>
+
+                {% case "background" %}
+                    {#
+                        TODO: Needed? Are we keeping and hiding using CSS?
+                        <img src="{{ assetUrl }}" alt="{{ asset.title }}" />
+                        <span class="uploadit--filename">{{ asset.filename }}</span>
+                    #}
+
+            {% endswitch %}
+
+        </span>
+
+
+        {% if name %}
+            {% set name = name|replace({'[]': ''}) ~ '[]' %}
+            <input type="hidden" name="{{ name }}" value="{{ asset.id }}">
+        {% endif %}
+
+        {% if enableRemove %}
+            <a class="uploadit--remove">{{ macros.icon('close') }}</a>
+        {% endif %}
+
+    </li>
+
+{% endif %}
+
+
+
+

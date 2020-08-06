@@ -1,0 +1,297 @@
+/* Uploader */
+
+.uploadit--uploader {
+    position: relative;
+    border:1px dotted #ccc;
+    border-radius: 6px;
+}
+
+.uploadit--uploader.uploadit--layout-grid {}
+.uploadit--uploader.uploadit--layout-list {}
+
+.uploadit--assets {
+    list-style-type: none;
+    padding: 0;
+}
+
+/* Asset */
+.uploadit--asset {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    position: relative;
+    min-height: 80px;
+    overflow: hidden;
+}
+
+.uploadit--reorderEnabled .uploadit--asset:hover {
+    cursor: all-scroll;
+}
+
+.uploadit--assetPreview-background {}
+.uploadit--assetPreview-image {}
+.uploadit--assetPreview-file {}
+
+.uploadit--icon {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+}
+
+.uploadit--filename {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.uploadit--fileIcon {
+    height: 80px;
+    width: 80px;
+    margin-right: 8px;
+}
+
+.uploadit--asset img {
+    width: 80px;
+    height: 80px;
+    margin-right: 8px;
+}
+
+.uploadit--remove {
+    margin: 8px;
+    padding: 8px;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+}
+
+.uploadit--remove svg {
+    width: 16px;
+    height: 16px;
+}
+
+.uploadit--handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 99;
+}
+
+.uploadit--assetDragging {
+}
+.uploadit--assetChosen {
+    opacity: 0.5;
+}
+.uploadit--assetGhost {
+    opacity: 1;
+}
+
+/* Asset Placeholder */
+.uploadit--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    position: relative;
+    min-height: 80px;
+    overflow: hidden;
+}
+.uploadit--placeholderCancel {
+    margin: 8px;
+    cursor: pointer;
+    order: 3;
+}
+.uploadit--placeholderProgress {
+    z-index: 90;
+    order: 1;
+    margin: 8px;
+}
+.uploadit--placeholderError {
+    color: red;
+    z-index: 90;
+    order: 2;
+    margin: 8px;
+}
+
+.uploadit--asset img {
+    display: block;
+}
+
+/* Controls */
+.uploadit--controls {
+    width: 100%;
+    display: inline-block;
+    padding: 24px;
+}
+
+.uploadit--upload {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    text-decoration: none;
+    color: #000000;
+}
+.uploadit--label {
+    display: inline-block;
+    padding: 12px 20px;
+    color: white;
+    background-color: #000000;
+}
+.uploadit--or {
+}
+.uploadit--btn {
+}
+
+/* Errors */
+.uploadit--errors {
+    color: red;
+}
+
+/* Progress */
+.uploadit--progress {
+    display: none;
+}
+
+/* Utilities */
+.uploadit--isHidden {
+    display: none !important;
+}
+
+.uploadit--isDragging {
+    opacity: 0.5;
+}
+
+@keyframes loading {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.uploadit--isLoading:before {
+    content: "";
+    background: rgba(255, 255, 255, 0.8);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 98;
+}
+
+.uploadit--isLoading:after {
+    content: "";
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    margin-top: -15px;
+    margin-left: -15px;
+    border-radius: 50%;
+    border: 3px solid #000000;
+    border-top-color: transparent !important;
+    animation: loading 0.7s linear infinite;
+    z-index: 99;
+}
+
+/* Notice */
+.uploadit--notice {
+    border: 1px solid #333;
+    background: #f3f3f3;
+    border-radius: 5px;
+    padding: 20px;
+}
+
+.uploadit--noticeErrors {
+    list-style: none;
+    color: orange;
+    padding: 0;
+    margin: 0;
+}
+
+/* Preload */
+.uploadit--preload {
+    display: none;
+    visibility: hidden;
+}
+
+.uploadit--userPhotoUploader {
+    position: relative;
+    display: inline-block;
+}
+
+.uploadit--inner {
+    position: relative;
+    overflow: hidden;
+}
+
+.uploadit--round {
+    border-radius: 9999px;
+}
+
+.uploadit--userPhotoUploader .uploadit--controls {
+    position: absolute;
+    top: 0;
+    padding: 0;
+}
+
+.uploadit--userPhotoUploader .uploadit--remove {
+    position: absolute;
+    left: 35%;
+}
+
+.uploadit--userPhotoUploader .uploadit--remove svg {
+    fill: white;
+}
+
+.uploadit--userPhotoUploader .uploadit--defaultUserPhotoWrapper {
+    z-index: -1;
+}
+
+.uploadit--userPhotoUploader .uploadit--userPhoto {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+}
+
+.uploadit--userPhotoUploader .uploadit--controls {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    top: auto;
+    z-index: 2;
+}
+
+.uploadit--userPhotoUploader .uploadit--upload {
+    display: inline;
+}
+
+.uploadit--userPhotoUploader .uploadit--label {
+    width: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.2) 25%,
+        rgba(0, 0, 0, 0.4) 92%,
+        rgba(0, 0, 0, 0.6) 100%
+    ) !important;
+}
+
+.uploadit--userPhotoUploader .uploadit--userPhotoImage {
+    display: inline;
+}
