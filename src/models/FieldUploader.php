@@ -3,7 +3,7 @@ namespace presseddigital\uploadit\models;
 
 use presseddigital\uploadit\Uploadit;
 use presseddigital\uploadit\base\Uploader;
-use presseddigital\uploadit\helpers\Upload;
+use presseddigital\uploadit\helpers\{Fields, Assets};
 
 use Craft;
 use craft\base\ElementInterface;
@@ -31,12 +31,9 @@ class FieldUploader extends Uploader
     // Public Methods
     // =========================================================================
 
-    public function __construct(array $attributes = [])
+    public function __construct(array $config = [])
     {
-        parent::__construct();
-
-        // Populate
-        $this->setAttributes($attributes, false);
+        parent::__construct($config);
     }
 
     public function rules()
@@ -55,43 +52,45 @@ class FieldUploader extends Uploader
         return $variables;
     }
 
-    public function setTarget(): bool
+    public function render()
     {
-        // Element provided lets check it
+        // Get Element
         $element = $this->element;
         if($element && !$element instanceof ElementInterface)
         {
             $element = Craft::$app->getElements()->getElementById((int) $this->element);
         }
 
-        // Got an element lets check the field
-        $field = $this->field instanceof FieldInterface ? $this->field : false;
-        if(!$field)
+        // Get Field
+        $field = $this->field;
+        if($field && !$this->field instanceof FieldInterface)
         {
-            $field = Uploadit::$plugin->service->getAssetFieldByHandleOrId($this->field);
+            if(is_numeric($field))
+            {
+                $field = Craft::$app->getFields()->getFieldById($field);
+            }
+            else
+            {
+                $field = Fields::getFieldByHandle($this->field);
+            }
         }
 
-        // Field is a duffer
-        if(!$field)
+        // Field Setup
+        if($field)
+        {
+            $this->limit = $field->limit ? $field->limit : null;
+            $this->allowedFileExtensions = Assets::getAllowedFileExtensionsByFieldKinds($field->allowedKinds);
+            $this->setUploadRequestParams([
+                'fieldId' => $field->id,
+                'elementId' => $element->id ?? null
+            ]);
+        }
+        else
         {
             $this->addError('field', Craft::t('uploadit', 'Could not locate your field.'));
-            return false;
         }
 
-        return $this->_updateTarget($field, $element ? $element : null);
-    }
-
-    private function _updateTarget(FieldInterface $field, ElementInterface $element = null)
-    {
-        // Set any uploader defaults based on the field
-        $this->target = [
-            'fieldId' => $field->id,
-            'elementId' => $element->id ?? null
-        ];
-        $this->limit = $field->limit ? $field->limit : null;
-        $this->allowedFileExtensions = Upload::getAllowedFileExtensionsByFieldKinds($field->allowedKinds);
-
-        return true;
+        return parent::render();
     }
 
 }

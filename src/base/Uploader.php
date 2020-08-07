@@ -3,17 +3,15 @@ namespace presseddigital\uploadit\base;
 
 use presseddigital\uploadit\Uploadit;
 use presseddigital\uploadit\base\UploaderInterface;
-use presseddigital\uploadit\helpers\Upload;
 use presseddigital\uploadit\assetbundles\uploadit\UploaditAssetBundle;
 
 use Craft;
 use craft\web\View;
 use craft\base\Model;
-use craft\helpers\Json as JsonHelper;
+use craft\helpers\{Json, Template, UrlHelper};
 
 abstract class Uploader extends Model implements UploaderInterface
 {
-
     // Constants
     // =========================================================================
 
@@ -29,16 +27,24 @@ abstract class Uploader extends Model implements UploaderInterface
         return null;
     }
 
+    public static function action(): string
+    {
+        return 'uploadit/upload';
+    }
+
     // Private
     // =========================================================================
 
     private $_defaultJavascriptVariables;
+    private $_uploadRequestParams;
 
     // Public
     // =========================================================================
 
-    // ID
     public $id;
+    public $name;
+
+    public $multiple = false;
 
     // Assets
     public $assets;
@@ -52,55 +58,121 @@ abstract class Uploader extends Model implements UploaderInterface
     public $enableRemove = true;
 
     // Styles, Layout & Preview
-    public $layout = 'grid'; // grid or list
-    public $view = 'auto'; // auto (best guess), image, file, background
-    public $customClass;
-    public $themeColour = '#000000';
     public $selectText;
     public $dropText;
-    public $showUploadIcon = true;
 
     // Asset
-    public $transform = '';
     public $limit;
     public $maxSize;
     public $allowedFileExtensions;
 
 
+
+    // FilePond Options
+
+
     // Public Methods
     // =========================================================================
 
-    public function __construct()
+    public function __construct(array $config = [])
     {
-        $config = Craft::$app->getConfig()->getGeneral();
+
+        $generalConfig = Craft::$app->getConfig()->getGeneral();
 
         // Defualt Settings
         $this->id = uniqid('uploadit');
         $this->selectText = Craft::t('uploadit', 'Select files');
         $this->dropText = Craft::t('uploadit', 'drop files here');
-        $this->maxSize = $config->maxUploadFileSize;
-        $this->allowedFileExtensions = $config->allowedFileExtensions;
+        $this->maxSize = $generalConfig->maxUploadFileSize;
+        $this->allowedFileExtensions = $generalConfig->allowedFileExtensions;
 
         // Default Javascript Variables
         $this->_defaultJavascriptVariables = [
-            'debug' => $config->devMode,
-            'csrfTokenName' => $config->csrfTokenName,
+            'csrfTokenName' => $generalConfig->csrfTokenName,
             'csrfTokenValue' => Craft::$app->getRequest()->getCsrfToken(),
         ];
+
+        parent::__construct($config);
+    }
+
+    public function getFilePondOptions()
+    {
+        $options = [
+            'maxFiles' =>  2,
+            'allowBrowse' => false,
+            'dropValidation' => true,
+            'instantUpload' => false,
+        ];
+
+        if($this->assets)
+        {
+            // Add files to uploader
+        }
+
+        return Json::encode($options, JSON_NUMERIC_CHECK);
+    }
+
+    public function setUploadRequestParams(array $params = null)
+    {
+        $this->_uploadRequestParams = $params;
+    }
+
+    public function getUploadRequestParams()
+    {
+        return $this->_uploadRequestParams;
     }
 
     public function render()
     {
-        $this->validate();
-
+        $config = Craft::$app->getConfig()->getGeneral();
         $view = Craft::$app->getView();
-        $view->registerAssetBundle(UploaditAssetBundle::class);
-        $view->registerJs('new UploaditAssets('.$this->getJavascriptVariables().');', View::POS_END);
-        $view->registerCss($this->getCustomCss());
 
-        return Upload::renderTemplate('uploadit/uploader', [
+        $view->registerAssetBundle(UploaditAssetBundle::class);
+
+        $siteUrl = UrlHelper::siteUrl();
+        $formData = '';
+        $uploadRequestParams = $this->getUploadRequestParams();
+        $uploadRequestParams['action'] = self::action();
+        $uploadRequestParams[$config->csrfTokenName] = Craft::$app->getRequest()->getCsrfToken();
+        foreach ($uploadRequestParams as $param => $value)
+        {
+            $formData .= "formData.append('{$param}', '{$value}');";
+        }
+
+        $js = <<<EOD
+FilePond.create(document.getElementById('{$this->id}'), {$this->getFilePondOptions()});
+FilePond.setOptions({
+    server: {
+        url: '{$siteUrl}',
+        process: {
+            url: '/',
+            method: 'POST',
+            headers: {},
+            withCredentials: false,
+            ondata: (formData) => {
+                {$formData}
+                return formData;
+            }
+        },
+        revert: null,
+        restore: null,
+        load: null,
+        fetch: null
+    }
+});
+EOD;
+
+        $view->registerJs($js, View::POS_END);
+        // $view->registerCss($this->getCustomCss());
+
+        $templateMode = $view->getTemplateMode();
+        $view->setTemplateMode(View::TEMPLATE_MODE_CP);
+        $html = $view->renderTemplate('uploadit/uploader', [
             'uploader' => $this
         ]);
+        $view->setTemplateMode($templateMode);
+
+        return Template::raw($html);
     }
 
     public function rules()
@@ -108,7 +180,6 @@ abstract class Uploader extends Model implements UploaderInterface
         // IDEA: Should target use this for validation: https://www.yiiframework.com/doc/guide/2.0/en/tutorial-core-validators#filter
 
         $rules = parent::rules();
-        $rules[] = [['id'], 'required'];
         $rules[] = [['maxSize'], 'integer', 'max' => $this->_defaultMaxUploadFileSize, 'message' => Craft::t('uploadit', 'Max file can\'t be greater than the global setting maxUploadFileSize')];
         return $rules;
     }
@@ -153,33 +224,22 @@ abstract class Uploader extends Model implements UploaderInterface
             $settings[$property] = $this->$property ?? null;
         }
 
-        return $encode ? JsonHelper::encode($settings) : $settings;
-    }
-
-    protected function getCustomCss()
-    {
-      $css = '
-        #'.$this->id.' .uploadit--isLoading:after { border-color: '.$this->themeColour.'; }
-        #'.$this->id.' .uploadit--label { background-color: '.$this->themeColour.'; }
-        #'.$this->id.' .uploadit--btn { color: '.$this->themeColour.'; }
-      ';
-
-      return $css;
+        return $encode ? Json::encode($settings) : $settings;
     }
 
     // Private Methods
     // =========================================================================
 
-    private function _checkTransformExists()
-    {
-        if(is_string($this->transform) && !empty($this->transform))
-        {
-            if(!Craft::$app->getAssetTransforms()->getTransformByHandle($this->transform))
-            {
-                $this->addError('transform', Craft::t('uploadit', 'Asset transform does not exist'));
-                return false;
-            }
-        }
-        return true;
-    }
+    // private function _checkTransformExists()
+    // {
+    //     if(is_string($this->transform) && !empty($this->transform))
+    //     {
+    //         if(!Craft::$app->getAssetTransforms()->getTransformByHandle($this->transform))
+    //         {
+    //             $this->addError('transform', Craft::t('uploadit', 'Asset transform does not exist'));
+    //             return false;
+    //         }
+    //     }
+    //     return true;
+    // }
 }

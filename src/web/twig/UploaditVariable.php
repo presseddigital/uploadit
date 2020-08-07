@@ -2,12 +2,9 @@
 namespace presseddigital\uploadit\web\twig;
 
 use presseddigital\uploadit\Uploadit;
-
-use presseddigital\uploadit\assetbundles\uploadit\UploaditAssetBundle;
-
+use presseddigital\uploadit\models\{FieldUploader, VolumeUploader, UserPhotoUploader};
 
 use Craft;
-use craft\web\View;
 use yii\di\ServiceLocator;
 
 class UploaditVariable extends ServiceLocator
@@ -29,19 +26,10 @@ class UploaditVariable extends ServiceLocator
     // Field Uploader
     // =========================================================================
 
-    public function field()
+    public function field(array $config = [])
     {
-        $view = Craft::$app->getView();
-        $view->registerAssetBundle(UploaditAssetBundle::class);
-
-        $templateMode = $view->getTemplateMode();
-        $view->setTemplateMode(View::TEMPLATE_MODE_CP);
-        $html = $view->renderTemplate('uploadit/uploader', [
-            'uploader' => []
-        ]);
-        $view->setTemplateMode($templateMode);
-
-        return $html;
+        $uploader = new FieldUploader($config);
+        return $uploader->render();
     }
 
     // Volume Uploader
@@ -49,8 +37,8 @@ class UploaditVariable extends ServiceLocator
 
     public function volume()
     {
-        Craft::dd('OUTPUT VOLUME UPLOADER');
-        return $this->plugin;
+        $uploader = new VolumeUploader($config);
+        return $uploader->render();
     }
 
     // User Photo Uploader
@@ -58,8 +46,8 @@ class UploaditVariable extends ServiceLocator
 
     public function userPhoto()
     {
-        Craft::dd('OUTPUT USER PHOTO UPLOADER');
-        return $this->plugin;
+        $uploader = new UserPhotoUploader($config);
+        return $uploader->render();
     }
 
 }

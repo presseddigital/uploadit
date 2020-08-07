@@ -1,29 +1,40 @@
-{% set id = uploader.id ?? ('asset'~random()) %}
-{% set name = uploader.name ?? null %}
-{% set multiple = uploader.multiple ?? false %}
-{% set assets = uploader.assets ?? [] %}
 
-{% set wrapperAttributes = {
-    id: id,
-    type: 'file',
-    name: name,
-    multiple: multiple
-}|merge(wrapperAttributes ?? {})|filter(v => v is not null) %}
 
-{% set inputAttributes = {
-    id: id,
-    type: 'file',
-    name: name,
-    multiple: multiple
-}|filter(v => v is not null) %}
+{% if uploader.hasErrors %}
 
-<div {{ attr(wrapperAttributes)}}>
-    <input {{ attr(inputAttributes) }} />
-</div>
+    {% if uploader.hasErrors() %}
+        <p>{{ 'Invalid Uploader Config'|t('uploadit') }}</p>
+        <ul>
+            {% for error in uploader.getErrors() %}
+                <li>{{ error|filter|join(', ') }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
-{% js %}
-    console.log('Initilized Uploader', '{{ id }}');
-{% endjs %}
+{% else %}
+
+    {% set name = uploader.name ?? null %}
+    {% set multiple = uploader.multiple ?? false %}
+
+    {% set wrapperAttributes = {}|merge(wrapperAttributes ?? {})|filter(v => v is not null) %}
+
+    {% set inputAttributes = {
+        id: uploader.id,
+        type: 'file',
+        name: name,
+        multiple: multiple
+    }|filter(v => v is not null) %}
+
+    <div {{ attr(wrapperAttributes)}}>
+        <input {{ attr(inputAttributes) }} />
+    </div>
+
+{% endif %}
+
+
+{{ d(uploader) }}
+
+
 
 {#
 

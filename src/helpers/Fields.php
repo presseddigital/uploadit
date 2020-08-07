@@ -2,70 +2,17 @@
 namespace presseddigital\uploadit\helpers;
 
 use Craft;
-use craft\web\View;
 use craft\db\Query;
-use craft\fields\Assets as AssetsField;
-use craft\helpers\Assets as AssetsHelper;
 
-class Upload
+class Fields
 {
-    // Template
+    // Properties
     // =========================================================================
 
-    public static function renderTemplate(string $template, array $variables = [])
-    {
-        $view = Craft::$app->getView();
-        $currentTemplateMode = $view->getTemplateMode();
-        $view->setTemplateMode(View::TEMPLATE_MODE_CP);
-
-        $html = $view->renderTemplate($template, $variables);
-
-        $view->setTemplateMode($currentTemplateMode);
-        return $html;
-    }
-
-    // Field Map
-    // =========================================================================
-
-    public static function getAllowedFileExtensionsByFieldKinds(array $kinds = null)
-    {
-        if(!$kinds)
-        {
-            return Craft::$app->getConfig()->getGeneral()->allowedFileExtensions;
-        }
-
-        $fileKinds = AssetsHelper::getFileKinds();
-
-        $allowedFileExtensions = [];
-        if($kinds)
-        {
-            foreach($kinds as $kind)
-            {
-                if(array_key_exists($kind, $fileKinds))
-                {
-                    $allowedFileExtensions = array_merge($allowedFileExtensions, $fileKinds[$kind]['extensions']);
-                }
-            }
-        }
-
-        $allowedFileExtensionsFromConfig = Craft::$app->getConfig()->getGeneral()->allowedFileExtensions;
-
-        $vaidatedAllowedFileExtensions = [];
-        foreach ($allowedFileExtensions as $allowedFileExtension)
-        {
-            if(in_array($allowedFileExtension, $allowedFileExtensionsFromConfig))
-            {
-                $vaidatedAllowedFileExtensions[] = $allowedFileExtension;
-            }
-        }
-        return $vaidatedAllowedFileExtensions;
-    }
-
-    // Field Map
-    // =========================================================================
-
-    private static $_fieldsMapType = AssetsField::class;
     private static $_fieldsMap;
+
+    // Public Methods
+    // =========================================================================
 
     public static function getFieldsMap()
     {
@@ -86,13 +33,15 @@ class Upload
         return self::$_fieldsMap[$handle] ?? false;
     }
 
+    // Private Methods
+    // =========================================================================
+
     private static function _buildFieldsMap()
     {
         if (self::$_fieldsMap === null) {
 
             $fields = (new Query())
                 ->select(['id', 'handle', 'context'])
-                ->where(['type' => self::$_fieldsMapType])
                 ->from(['{{%fields}}'])
                 ->all();
 
