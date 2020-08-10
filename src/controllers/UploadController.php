@@ -25,13 +25,18 @@ class UploadController extends Controller
     public function actionIndex()
     {
         // AssetsController - actionSaveAsset()
-        $response = Craft::$app->runAction('assets/save-asset');
+        $response = Craft::$app->runAction('assets/upload');
 
         // Response Errors
         if($response->data['error'] ?? false)
         {
             return $this->asErrorJson($response->data['error']);
         }
+
+        return $this->asJson($response->data['assetId']);
+
+
+
 
         // Asset
         $asset = Craft::$app->getAssets()->getAssetById($response->data['assetId']);
@@ -99,6 +104,7 @@ class UploadController extends Controller
             'image' => $asset->kind == 'image' ? ($asset->getUrl($transform) ?? $asset->getThumbUrl(800) ?? false) : false,
             'saved' => $elementSaved ?? false
         ]);
+
     }
 
     public function actionCanUpload()

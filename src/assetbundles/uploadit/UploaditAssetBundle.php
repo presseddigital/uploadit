@@ -17,6 +17,7 @@ class UploaditAssetBundle extends AssetBundle
             'filepond-plugin-image-validate-size/dist/filepond-plugin-image-validate-size.min.js',
             'filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.min.js',
             'filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.min.js',
+            'filepond-plugin-file-poster/dist/filepond-plugin-file-poster.min.js',
             'filepond/dist/filepond.min.js'
         ];
 
@@ -27,6 +28,7 @@ class UploaditAssetBundle extends AssetBundle
         $this->css = [
             'filepond/dist/filepond.min.css',
             'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css',
+            'filepond-plugin-file-poster/dist/filepond-plugin-file-poster.min.css',
         ];
 
         parent::init();
@@ -37,6 +39,7 @@ class UploaditAssetBundle extends AssetBundle
         parent::registerAssetFiles($view);
         $view->registerJs('FilePond.registerPlugin(
             FilePondPluginImagePreview,
+            FilePondPluginFilePoster,
             FilePondPluginFileValidateSize,
             FilePondPluginFileValidateType,
             FilePondPluginImageValidateSize

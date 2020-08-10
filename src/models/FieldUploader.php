@@ -40,7 +40,6 @@ class FieldUploader extends Uploader
     {
         $rules = parent::rules();
         $rules[] = [['name'], 'required'];
-        $rules[] = [['target'], 'required', 'message' => Craft::t('uploadit', 'A valid field and element must be set.')];
         return $rules;
     }
 

@@ -9,6 +9,7 @@ use Craft;
 use craft\web\View;
 use craft\base\Model;
 use craft\helpers\{Json, Template, UrlHelper};
+use craft\elements\db\ElementQueryInterface;
 
 abstract class Uploader extends Model implements UploaderInterface
 {
@@ -98,15 +99,56 @@ abstract class Uploader extends Model implements UploaderInterface
     public function getFilePondOptions()
     {
         $options = [
-            'maxFiles' =>  2,
-            'allowBrowse' => false,
+            'name' => 'assets-upload',
+            'maxFiles' =>  null,
+            'allowBrowse' => true,
+            'allowReorder' => true,
             'dropValidation' => true,
-            'instantUpload' => false,
+            'instantUpload' => true,
         ];
 
         if($this->assets)
         {
-            // Add files to uploader
+            $assets = $this->assets instanceof ElementQueryInterface ? $this->assets->all() : $this->assets;
+
+            $options['files'] = array_map(function($asset) {
+                return [
+                    'source' => $asset->id,
+                    'options' => [
+                        'type' => 'local',
+                        'file' => [
+                            'name' => $asset->getFilename(),
+                            'size' => $asset->size,
+                            'type' => $asset->getMimeType()
+                        ],
+                        'metadata' => [
+                            'poster' => $asset->kind == 'image' ? $asset->getUrl() : null
+                        ]
+                    ]
+                ];
+            }, $assets);
+
+            // [
+            //     [
+            //         // the server file reference
+            //         'source' => '12345',
+
+            //         // set type to local to indicate an already uploaded file
+            //         'options' => [
+            //             'type' => 'local',
+
+            //             // mock file information
+            //             'file' => [
+            //                 'name' => 'my-file.png',
+            //                 'size' => 3001025,
+            //                 'type' => 'image/png'
+            //             ],
+            //             'metadata' => [
+            //                 'poster' => 'https://beta.findarace.test/index.php?p=admin/actions/assets/thumb&uid=d0f456f7-8c95-445b-8376-b86ea58933d6&width=616&height=380&v=1597041760'
+            //             ]
+            //         ]
+            //     ]
+            // ];
         }
 
         return Json::encode($options, JSON_NUMERIC_CHECK);
@@ -139,9 +181,9 @@ abstract class Uploader extends Model implements UploaderInterface
             $formData .= "formData.append('{$param}', '{$value}');";
         }
 
-        $js = <<<EOD
-FilePond.create(document.getElementById('{$this->id}'), {$this->getFilePondOptions()});
-FilePond.setOptions({
+        $js = <<<JS
+var {$this->id}Uploader = FilePond.create(document.getElementById('{$this->id}'), {$this->getFilePondOptions()});
+{$this->id}Uploader.setOptions({
     server: {
         url: '{$siteUrl}',
         process: {
@@ -150,6 +192,12 @@ FilePond.setOptions({
             headers: {},
             withCredentials: false,
             ondata: (formData) => {
+                formData.getAll('{$this->name}').forEach(function(data) {
+                    if(data instanceof File) {
+                        formData.set('assets-upload', data);
+                    }
+                });
+                formData.delete('{$this->name}');
                 {$formData}
                 return formData;
             }
@@ -158,9 +206,10 @@ FilePond.setOptions({
         restore: null,
         load: null,
         fetch: null
-    }
+    },
 });
-EOD;
+
+JS;
 
         $view->registerJs($js, View::POS_END);
         // $view->registerCss($this->getCustomCss());

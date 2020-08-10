@@ -1,20 +1,23 @@
 
-
+{# TODO: @sam - Only Show these errors in dev mode #}
 {% if uploader.hasErrors %}
 
     {% if uploader.hasErrors() %}
-        <p>{{ 'Invalid Uploader Config'|t('uploadit') }}</p>
-        <ul>
-            {% for error in uploader.getErrors() %}
-                <li>{{ error|filter|join(', ') }}</li>
-            {% endfor %}
-        </ul>
+        <div style="padding:6px;border:1px red solid;border-radius:6px;">
+            <p><strong>{{ 'Invalid Uploader Config'|t('uploadit') }}</strong></p>
+            <ul>
+                {% for error in uploader.getErrors() %}
+                    <li style="color:red;">{{ error|filter|join('<br>')|raw }}</li>
+                {% endfor %}
+            </ul>
+        </div>
     {% endif %}
 
 {% else %}
 
     {% set name = uploader.name ?? null %}
     {% set multiple = uploader.multiple ?? false %}
+    {% set assets = uploader.assets ?? [] %}
 
     {% set wrapperAttributes = {}|merge(wrapperAttributes ?? {})|filter(v => v is not null) %}
 
@@ -29,12 +32,24 @@
         <input {{ attr(inputAttributes) }} />
     </div>
 
+    {#
+
+        Degrade Gracefully?
+
+        <fieldset id="{{ uploader.id }}">
+
+            {% for asset in assets %}
+                <input value="{{ asset.id }}" data-type="local" data-file-name="{{ asset.filename }}" data-file-size="{{ asset.size }}" type="hidden">
+            {% endfor %}
+
+            <input {{ attr(inputAttributes) }} />
+
+        </fieldset>
+    #}
+
 {% endif %}
 
-
-{{ d(uploader) }}
-
-
+{# {{ d(uploader) }} #}
 
 {#
 
