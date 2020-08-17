@@ -2,11 +2,53 @@
 namespace presseddigital\uploadit\helpers;
 
 use Craft;
+use Mimey\MimeTypes;
 
 class Assets extends craft\helpers\Assets
 {
-    // Field Map
+
+    // Private
     // =========================================================================
+
+    private static $_extensionMimeTypeMap;
+
+    // Public
+    // =========================================================================
+
+
+    public static function getExtensionMimeTypeMap(array $extensions = null)
+    {
+        if($extensions)
+        {
+            $map = self::getExtensionMimeTypeMap();
+            return array_filter($map, function($extension) use ($extensions) {
+                return in_array($extension, $extensions);
+            }, ARRAY_FILTER_USE_KEY);
+        }
+
+        if(self::$_extensionMimeTypeMap !== null)
+        {
+            return self::$_extensionMimeTypeMap;
+        }
+
+        $extensions = Craft::$app->getConfig()->getGeneral()->allowedFileExtensions;
+        $mimes = new MimeTypes;
+        $map = [];
+        foreach ($extensions as $extension)
+        {
+            if($mimeType = $mimes->getMimeType($extension))
+            {
+                $map[$extension] = $mimeType;
+            }
+
+        }
+        return self::$_extensionMimeTypeMap = $map;
+    }
+
+    public static function getExtensionsAsMimeTypes(array $extensions = [])
+    {
+        return array_values(self::getExtensionMimeTypeMap($extensions));
+    }
 
     public static function getAllowedFileExtensionsByFieldKinds(array $kinds = null)
     {

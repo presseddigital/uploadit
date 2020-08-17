@@ -17,15 +17,16 @@ class FieldUploader extends Uploader
 
     public static function type(): string
     {
-        return self::TYPE_FIELD;
+        return 'field';
     }
 
-    // Public
+    // Properties
     // =========================================================================
 
+    private $_field;
+    private $_element;
+
     public $name;
-    public $field;
-    public $element;
     public $saveOnUpload = false;
 
     // Public Methods
@@ -36,59 +37,95 @@ class FieldUploader extends Uploader
         parent::__construct($config);
     }
 
+    public function getField()
+    {
+        return $this->_field;
+    }
+
+    public function setField($field)
+    {
+        if($field instanceof FieldInterface)
+        {
+            $this->_field = $field;
+            return;
+        }
+
+        if(is_numeric($field))
+        {
+            $this->_field = Craft::$app->getFields()->getFieldById($field);
+            return;
+        }
+
+        if(is_string($field))
+        {
+            $this->_field = Fields::getFieldByHandle($field);
+            return;
+        }
+
+        $this->_field = false;
+    }
+
+    public function getElement()
+    {
+        return $this->_element;
+    }
+
+    public function setElement($element)
+    {
+        if($element instanceof ElementInterface)
+        {
+            $this->_element = $element;
+            return;
+        }
+
+        if(is_numeric($element))
+        {
+            $this->_element = Craft::$app->getElements()->getElementById((int) $element);
+            return;
+        }
+
+        $this->_element = false;
+    }
+
     public function rules()
     {
         $rules = parent::rules();
-        $rules[] = [['name'], 'required'];
+        $rules[] = [['name'], 'string'];
+        $rules[] = [['name', 'field', 'element'], 'required'];
+        $rules[] = [
+            ['field'],
+            function ($attribute)
+            {
+                if(!($this->$attribute ?? null) instanceof FieldInterface)
+                {
+                    $this->addError('field', Craft::t('app', '{attribute} is invalid', ['attribute' => Craft::t('app', 'Field')]));
+                }
+            },
+        ];
+        $rules[] = [
+            ['element'],
+            function ($attribute)
+            {
+                if(!($this->$attribute ?? null) instanceof ElementInterface)
+                {
+                    $this->addError('element', Craft::t('app', '{attribute} is invalid', ['attribute' => Craft::t('app', 'Element')]));
+                }
+            },
+        ];
         return $rules;
-    }
-
-    public function getJavascriptProperties(): array
-    {
-        $variables = parent::getJavascriptProperties();
-        $variables[] = 'name';
-        $variables[] = 'saveOnUpload';
-        return $variables;
     }
 
     public function render()
     {
-        // Get Element
-        $element = $this->element;
-        if($element && !$element instanceof ElementInterface)
+        if($this->field && $this->element)
         {
-            $element = Craft::$app->getElements()->getElementById((int) $this->element);
-        }
-
-        // Get Field
-        $field = $this->field;
-        if($field && !$this->field instanceof FieldInterface)
-        {
-            if(is_numeric($field))
-            {
-                $field = Craft::$app->getFields()->getFieldById($field);
-            }
-            else
-            {
-                $field = Fields::getFieldByHandle($this->field);
-            }
-        }
-
-        // Field Setup
-        if($field)
-        {
-            $this->limit = $field->limit ? $field->limit : null;
-            $this->allowedFileExtensions = Assets::getAllowedFileExtensionsByFieldKinds($field->allowedKinds);
-            $this->setUploadRequestParams([
-                'fieldId' => $field->id,
-                'elementId' => $element->id ?? null
+            $this->limit = $this->field->limit ? $this->field->limit : null;
+            $this->allowedFileExtensions = Assets::getAllowedFileExtensionsByFieldKinds($this->field->allowedKinds);
+            $this->setRequestParams([
+                'fieldId' => $this->field->id,
+                'elementId' => $this->element->id,
             ]);
         }
-        else
-        {
-            $this->addError('field', Craft::t('uploadit', 'Could not locate your field.'));
-        }
-
         return parent::render();
     }
 

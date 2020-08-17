@@ -3,6 +3,7 @@ namespace presseddigital\uploadit\base;
 
 use presseddigital\uploadit\Uploadit;
 use presseddigital\uploadit\base\UploaderInterface;
+use presseddigital\uploadit\helpers\Assets;
 use presseddigital\uploadit\assetbundles\uploadit\UploaditAssetBundle;
 
 use Craft;
@@ -13,14 +14,7 @@ use craft\elements\db\ElementQueryInterface;
 
 abstract class Uploader extends Model implements UploaderInterface
 {
-    // Constants
-    // =========================================================================
-
-    const TYPE_VOLUME = 'volume';
-    const TYPE_FIELD = 'field';
-    const TYPE_USER_PHOTO = 'userPhoto';
-
-    // Private
+    // Static
     // =========================================================================
 
     public static function type(): string
@@ -36,8 +30,10 @@ abstract class Uploader extends Model implements UploaderInterface
     // Private
     // =========================================================================
 
-    private $_defaultJavascriptVariables;
-    private $_uploadRequestParams;
+    private $_requestParams;
+    private $_craftMaxUploadSize;
+    private $_maxSize;
+    private $_transform;
 
     // Public
     // =========================================================================
@@ -47,65 +43,139 @@ abstract class Uploader extends Model implements UploaderInterface
 
     public $multiple = false;
 
-    // Assets
-    public $assets;
+    public $imagePreview = true;
+    public $allowReorder = true;
+    public $allowRemove = true;
 
-    // Target
-    public $target;
-
-    // Settings
-    public $enableDropToUpload = true;
-    public $enableReorder = true;
-    public $enableRemove = true;
-
-    // Styles, Layout & Preview
-    public $selectText;
-    public $dropText;
-
-    // Asset
     public $limit;
-    public $maxSize;
     public $allowedFileExtensions;
 
+    public $allowDrop = true;
+    public $allowBrowse = true;
 
+    public $dropText;
+    public $orText;
+    public $browseText;
 
-    // FilePond Options
+    public $layout;
 
+    public $assets;
+    public $options = [];
 
     // Public Methods
     // =========================================================================
 
     public function __construct(array $config = [])
     {
-
-        $generalConfig = Craft::$app->getConfig()->getGeneral();
-
-        // Defualt Settings
-        $this->id = uniqid('uploadit');
-        $this->selectText = Craft::t('uploadit', 'Select files');
-        $this->dropText = Craft::t('uploadit', 'drop files here');
-        $this->maxSize = $generalConfig->maxUploadFileSize;
-        $this->allowedFileExtensions = $generalConfig->allowedFileExtensions;
-
-        // Default Javascript Variables
-        $this->_defaultJavascriptVariables = [
-            'csrfTokenName' => $generalConfig->csrfTokenName,
-            'csrfTokenValue' => Craft::$app->getRequest()->getCsrfToken(),
-        ];
-
         parent::__construct($config);
     }
 
+    public function init()
+    {
+        $generalConfig = Craft::$app->getConfig()->getGeneral();
+        $this->_craftMaxUploadSize = $generalConfig->maxUploadFileSize;
+
+        if(!$this->id) {
+            $this->id = uniqid('uploadit');
+        }
+
+        if(!$this->allowedFileExtensions) {
+            $this->allowedFileExtensions = $generalConfig->allowedFileExtensions;
+        }
+
+        if(!$this->maxSize) {
+            $this->maxSize = $this->_craftMaxUploadSize;
+        }
+
+        if(!$this->dropText) {
+            $this->dropText = Craft::t('uploadit', 'Drop files here');
+        }
+
+        if(!$this->orText) {
+            $this->orText = Craft::t('uploadit', 'or');
+        }
+
+        if(!$this->browseText) {
+            $this->browseText = Craft::t('uploadit', 'browse');
+        }
+    }
+
+    public function rules()
+    {
+        $rules = parent::rules();
+        $rules[] = [['browseText', 'dropText', 'orText'], 'string'];
+        $rules[] = [['allowBrowse', 'allowDrop'], 'boolean'];
+        $rules[] = [['allowBrowse', 'allowDrop'], 'default', 'value' => true];
+        $rules[] = [['maxSize'], 'integer'];
+        $rules[] = [['layout'], 'in', 'range' => ['integrated', 'compact', 'circle']];
+        return $rules;
+    }
+
+    public function attributes()
+    {
+        $attributes = parent::attributes();
+        $attributes[] = 'maxSize';
+        $attributes[] = 'requestParams';
+        $attributes[] = 'transform';
+        return $attributes;
+    }
+
+
     public function getFilePondOptions()
     {
+        // Label
+        $labelIdle = $this->allowDrop ? $this->dropText : '';
+        if($this->allowDrop && $this->allowBrowse)
+        {
+            $labelIdle .= ' '.$this->orText.' ';
+        }
+        if($this->allowBrowse)
+        {
+            $labelIdle .= ' <span class="filepond--label-action">'.$this->browseText.'</span>';
+        }
+
+        // Transform
+        // TODO: @sam - Get Transform, could be string, array or Transform
+        //            - Use to populate view for the transform and deliver the asset to the file poster plugin
+
+        // Options
         $options = [
-            'name' => 'assets-upload',
-            'maxFiles' =>  null,
-            'allowBrowse' => true,
-            'allowReorder' => true,
-            'dropValidation' => true,
+            // FilePond
+            'maxFiles' =>  $this->limit,
+            'allowBrowse' => $this->allowBrowse,
+            'allowReorder' => $this->allowReorder,
+            'allowDrop' => $this->allowDrop,
+            'allowPaste' => true,
+            'allowMultiple' => true,
+            'allowReplace' => true,
+            'allowRevert' => $this->allowRemove,
+            'itemInsertLocation' => 'after',
+            'dropValidation' => false,
             'instantUpload' => true,
+            'labelIdle' => $labelIdle,
+            // Style
+            'stylePanelLayout' => $this->layout,
+            // FileTypeValidation
+            'acceptedFileTypes' => Assets::getExtensionsAsMimeTypes($this->allowedFileExtensions),
+            'labelFileTypeNotAllowed' => Craft::t('uploadit', 'File type invalid'),
+            'fileValidateTypeLabelExpectedTypesMap' => array_flip(Assets::getExtensionMimeTypeMap($this->allowedFileExtensions)),
+            // FileSizeValidation
+            'allowFileSizeValidation' => true,
+            'maxFileSize' => ($this->maxSize / 1024).'KB',
+            // FilePoster
+            'allowFilePoster' => $this->imagePreview,
+            // ImagePreview
+            'allowImagePreview' => $this->imagePreview,
         ];
+
+        if($this->transform)
+        {
+            $options['allowImageResize'] = true;
+            $options['imageResizeTargetWidth'] = $this->transform->width;
+            $options['imageResizeTargetHeight'] = $this->transform->height;
+            $options['imageResizeMode'] = $this->transform->mode == 'stretch' ? 'cover' : 'contain';
+            $options['imageResizeUpscale'] = true;
+        }
 
         if($this->assets)
         {
@@ -122,50 +192,66 @@ abstract class Uploader extends Model implements UploaderInterface
                             'type' => $asset->getMimeType()
                         ],
                         'metadata' => [
-                            'poster' => $asset->kind == 'image' ? $asset->getUrl() : null
+                            'poster' => $asset->kind == 'image' ? $asset->getUrl($this->transform) : null
                         ]
                     ]
                 ];
             }, $assets);
+        }
 
-            // [
-            //     [
-            //         // the server file reference
-            //         'source' => '12345',
-
-            //         // set type to local to indicate an already uploaded file
-            //         'options' => [
-            //             'type' => 'local',
-
-            //             // mock file information
-            //             'file' => [
-            //                 'name' => 'my-file.png',
-            //                 'size' => 3001025,
-            //                 'type' => 'image/png'
-            //             ],
-            //             'metadata' => [
-            //                 'poster' => 'https://beta.findarace.test/index.php?p=admin/actions/assets/thumb&uid=d0f456f7-8c95-445b-8376-b86ea58933d6&width=616&height=380&v=1597041760'
-            //             ]
-            //         ]
-            //     ]
-            // ];
+        if($this->options)
+        {
+            $options = array_merge($options, $this->options);
         }
 
         return Json::encode($options, JSON_NUMERIC_CHECK);
     }
 
-    public function setUploadRequestParams(array $params = null)
+    public function setRequestParams(array $params = null)
     {
-        $this->_uploadRequestParams = $params;
+        $this->_requestParams = $params;
     }
 
-    public function getUploadRequestParams()
+    public function getRequestParams()
     {
-        return $this->_uploadRequestParams;
+        return $this->_requestParams;
+    }
+
+    public function setMaxSize(int $size = null)
+    {
+        if(!$size)
+        {
+            $this->_maxSize = $this->_craftMaxUploadSize;
+        }
+        $this->_maxSize = min((int) $size, $this->_craftMaxUploadSize);
+    }
+
+    public function getMaxSize()
+    {
+        return $this->_maxSize;
+    }
+
+    public function setTransform($transform)
+    {
+        try
+        {
+            $this->_transform = Craft::$app->getAssetTransforms()->normalizeTransform($transform);
+        }
+        catch(\Exception $e)
+        {
+            $this->_transform = null;
+        }
+    }
+
+    public function getTransform()
+    {
+        return $this->_transform;
     }
 
     public function render()
     {
+        $this->validate();
+
         $config = Craft::$app->getConfig()->getGeneral();
         $view = Craft::$app->getView();
 
@@ -173,7 +259,7 @@ abstract class Uploader extends Model implements UploaderInterface
 
         $siteUrl = UrlHelper::siteUrl();
         $formData = '';
-        $uploadRequestParams = $this->getUploadRequestParams();
+        $uploadRequestParams = $this->getRequestParams();
         $uploadRequestParams['action'] = self::action();
         $uploadRequestParams[$config->csrfTokenName] = Craft::$app->getRequest()->getCsrfToken();
         foreach ($uploadRequestParams as $param => $value)
@@ -182,7 +268,12 @@ abstract class Uploader extends Model implements UploaderInterface
         }
 
         $js = <<<JS
-var {$this->id}Uploader = FilePond.create(document.getElementById('{$this->id}'), {$this->getFilePondOptions()});
+var {$this->id}Element = document.getElementById('{$this->id}');
+var {$this->id}Uploader = FilePond.create({$this->id}Element, {$this->getFilePondOptions()});
+{$this->id}Uploader.on('init', function() {
+    {$this->id}Uploader.element.parentElement.classList.remove('hidden');
+});
+
 {$this->id}Uploader.setOptions({
     server: {
         url: '{$siteUrl}',
@@ -208,7 +299,6 @@ var {$this->id}Uploader = FilePond.create(document.getElementById('{$this->id}')
         fetch: null
     },
 });
-
 JS;
 
         $view->registerJs($js, View::POS_END);
@@ -224,57 +314,8 @@ JS;
         return Template::raw($html);
     }
 
-    public function rules()
-    {
-        // IDEA: Should target use this for validation: https://www.yiiframework.com/doc/guide/2.0/en/tutorial-core-validators#filter
-
-        $rules = parent::rules();
-        $rules[] = [['maxSize'], 'integer', 'max' => $this->_defaultMaxUploadFileSize, 'message' => Craft::t('uploadit', 'Max file can\'t be greater than the global setting maxUploadFileSize')];
-        return $rules;
-    }
-
-    public function beforeValidate()
-    {
-        $this->_checkTransformExists();
-        $this->setTarget();
-    }
-
-    public function getJavascriptProperties(): array
-    {
-        return [
-            'id',
-            'target',
-            'layout',
-            'view',
-            'limit',
-            'maxSize',
-            'transform',
-            'allowedFileExtensions',
-            'enableDropToUpload',
-            'enableReorder',
-            'enableRemove'
-        ];
-    }
-
-    public function setTarget(): bool
-    {
-        return null;
-    }
-
     // Protected Methods
     // =========================================================================
-
-    protected function getJavascriptVariables(bool $encode = true)
-    {
-        $settings = $this->_defaultJavascriptVariables;
-        $settings['type'] = static::type();
-        foreach ($this->getJavascriptProperties() as $property)
-        {
-            $settings[$property] = $this->$property ?? null;
-        }
-
-        return $encode ? Json::encode($settings) : $settings;
-    }
 
     // Private Methods
     // =========================================================================

@@ -1,4 +1,3 @@
-
 {# TODO: @sam - Only Show these errors in dev mode #}
 {% if uploader.hasErrors %}
 
@@ -15,21 +14,15 @@
 
 {% else %}
 
-    {% set name = uploader.name ?? null %}
-    {% set multiple = uploader.multiple ?? false %}
-    {% set assets = uploader.assets ?? [] %}
-
-    {% set wrapperAttributes = {}|merge(wrapperAttributes ?? {})|filter(v => v is not null) %}
-
-    {% set inputAttributes = {
+    {% set attributes = {
         id: uploader.id,
         type: 'file',
-        name: name,
-        multiple: multiple
-    }|filter(v => v is not null) %}
+        name: uploader.name ?? null,
+        multiple: uploader.multiple ?? null,
+    }|filter %}
 
-    <div {{ attr(wrapperAttributes)}}>
-        <input {{ attr(inputAttributes) }} />
+    <div class="hidden">
+        <input {{ attr(attributes) }}>
     </div>
 
     {#
@@ -49,7 +42,7 @@
 
 {% endif %}
 
-{# {{ d(uploader) }} #}
+{{ d(uploader) }}
 
 {#
 

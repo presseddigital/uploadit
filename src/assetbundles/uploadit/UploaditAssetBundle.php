@@ -14,6 +14,7 @@ class UploaditAssetBundle extends AssetBundle
         $this->baseUrl = 'https://unpkg.com/';
         $this->js = [
             'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js',
+            'filepond-plugin-image-resize/dist/filepond-plugin-image-resize.min.js',
             'filepond-plugin-image-validate-size/dist/filepond-plugin-image-validate-size.min.js',
             'filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.min.js',
             'filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.min.js',
@@ -42,7 +43,8 @@ class UploaditAssetBundle extends AssetBundle
             FilePondPluginFilePoster,
             FilePondPluginFileValidateSize,
             FilePondPluginFileValidateType,
-            FilePondPluginImageValidateSize
+            FilePondPluginImageValidateSize,
+            FilePondPluginImageResize
         );', View::POS_HEAD);
         // $view->registerCss('[x-cloak] { display:none; }');
     }

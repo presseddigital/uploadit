@@ -1,19 +1,12 @@
 <?php
 namespace presseddigital\uploadit\base;
 
-use Craft;
-use craft\base\ComponentInterface;
-
 interface UploaderInterface
 {
     // Static
     // =========================================================================
 
     public static function type(): string;
+    public static function action(): string;
 
-    // Public Methods
-    // =========================================================================
-
-    public function getJavascriptProperties(): array;
-    public function setTarget(): bool;
 }
