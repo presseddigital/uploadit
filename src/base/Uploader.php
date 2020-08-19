@@ -22,15 +22,19 @@ abstract class Uploader extends Model implements UploaderInterface
         return null;
     }
 
-    public static function action(): string
+    public static function actionProcess(): string
     {
-        return 'uploadit/upload';
+        return 'uploadit/upload/process';
+    }
+
+    public static function actionRemove(): string
+    {
+        return 'uploadit/upload/remove';
     }
 
     // Private
     // =========================================================================
 
-    private $_requestParams;
     private $_craftMaxUploadSize;
     private $_maxSize;
     private $_transform;
@@ -39,13 +43,16 @@ abstract class Uploader extends Model implements UploaderInterface
     // =========================================================================
 
     public $id;
-    public $name;
+    public $name = 'assets-upload';
 
     public $multiple = false;
 
     public $imagePreview = true;
+    public $imagePreviewHeight = 200;
     public $allowReorder = true;
     public $allowRemove = true;
+
+    public $enableDeleteAssets = false;
 
     public $limit;
     public $allowedFileExtensions;
@@ -60,15 +67,10 @@ abstract class Uploader extends Model implements UploaderInterface
     public $layout;
 
     public $assets;
-    public $options = [];
+    public $options;
 
     // Public Methods
     // =========================================================================
-
-    public function __construct(array $config = [])
-    {
-        parent::__construct($config);
-    }
 
     public function init()
     {
@@ -103,10 +105,14 @@ abstract class Uploader extends Model implements UploaderInterface
     public function rules()
     {
         $rules = parent::rules();
-        $rules[] = [['browseText', 'dropText', 'orText'], 'string'];
-        $rules[] = [['allowBrowse', 'allowDrop'], 'boolean'];
-        $rules[] = [['allowBrowse', 'allowDrop'], 'default', 'value' => true];
+        $rules[] = [['browseText', 'dropText', 'orText', 'name'], 'string'];
+        $rules[] = [['name'], 'default', 'value' => 'assets-upload'];
+        $rules[] = [['allowBrowse', 'allowDrop', 'imagePreview', 'allowRemove', 'enableDeleteAssets'], 'boolean'];
+        $rules[] = [['allowBrowse', 'allowDrop', 'imagePreview', 'allowRemove'], 'default', 'value' => true];
+        $rules[] = [['enableDeleteAssets'], 'default', 'value' => false];
         $rules[] = [['maxSize'], 'integer'];
+        $rules[] = [['imagePreviewHeight'], 'integer', 'min' => 44];
+        $rules[] = [['imagePreviewHeight'], 'default', 'value' => 200];
         $rules[] = [['layout'], 'in', 'range' => ['integrated', 'compact', 'circle']];
         return $rules;
     }
@@ -118,6 +124,15 @@ abstract class Uploader extends Model implements UploaderInterface
         $attributes[] = 'requestParams';
         $attributes[] = 'transform';
         return $attributes;
+    }
+
+    public function attributeLabels()
+    {
+        $labels = parent::attributeLabels();
+        $labels['maxSize'] = Craft::t('uploadit', 'Max Size');
+        $labels['requestParams'] = Craft::t('uploadit', 'Request Params');
+        $labels['transform'] = Craft::t('app', 'Transform');
+        return $labels;
     }
 
 
@@ -134,19 +149,16 @@ abstract class Uploader extends Model implements UploaderInterface
             $labelIdle .= ' <span class="filepond--label-action">'.$this->browseText.'</span>';
         }
 
-        // Transform
-        // TODO: @sam - Get Transform, could be string, array or Transform
-        //            - Use to populate view for the transform and deliver the asset to the file poster plugin
-
         // Options
         $options = [
             // FilePond
+            'name' =>  $this->name,
             'maxFiles' =>  $this->limit,
             'allowBrowse' => $this->allowBrowse,
             'allowReorder' => $this->allowReorder,
             'allowDrop' => $this->allowDrop,
             'allowPaste' => true,
-            'allowMultiple' => true,
+            'allowMultiple' => $this->multiple,
             'allowReplace' => true,
             'allowRevert' => $this->allowRemove,
             'itemInsertLocation' => 'after',
@@ -158,31 +170,45 @@ abstract class Uploader extends Model implements UploaderInterface
             // FileTypeValidation
             'acceptedFileTypes' => Assets::getExtensionsAsMimeTypes($this->allowedFileExtensions),
             'labelFileTypeNotAllowed' => Craft::t('uploadit', 'File type invalid'),
+            'fileValidateTypeLabelExpectedTypes' => Craft::t('uploadit', 'Expects {allTypes}'),
             'fileValidateTypeLabelExpectedTypesMap' => array_flip(Assets::getExtensionMimeTypeMap($this->allowedFileExtensions)),
             // FileSizeValidation
             'allowFileSizeValidation' => true,
             'maxFileSize' => ($this->maxSize / 1024).'KB',
             // FilePoster
             'allowFilePoster' => $this->imagePreview,
+            'filePosterHeight' => $this->imagePreviewHeight,
             // ImagePreview
             'allowImagePreview' => $this->imagePreview,
+            'imagePreviewHeight' => $this->imagePreviewHeight,
         ];
 
-        if($this->transform)
-        {
-            $options['allowImageResize'] = true;
-            $options['imageResizeTargetWidth'] = $this->transform->width;
-            $options['imageResizeTargetHeight'] = $this->transform->height;
-            $options['imageResizeMode'] = $this->transform->mode == 'stretch' ? 'cover' : 'contain';
-            $options['imageResizeUpscale'] = true;
-        }
+        // TODO: @sam - Fix Support For Transforms
+        //
+        // if($this->transform)
+        // {
+        //     if($this->transform->mode == 'crop')
+        //     {
+        //         $options['allowImageCrop'] = true;
+        //         $options['imageCropAspectRatio'] = ($this->transform->width ?? $this->transform->height ?? 1).':'.($this->transform->height ?? $this->transform->width ?? 1);
+        //     }
+        //     else
+        //     {
+        //         $options['allowImageResize'] = true;
+        //         $options['imageResizeTargetWidth'] = $this->transform->width;
+        //         $options['imageResizeTargetHeight'] = $this->transform->height;
+        //         $options['imageResizeMode'] = $this->transform->mode == 'stretch' ? 'cover' : 'contain';
+        //         $options['imageResizeUpscale'] = false;
+        //     }
+        // }
 
         if($this->assets)
         {
             $assets = $this->assets instanceof ElementQueryInterface ? $this->assets->all() : $this->assets;
 
             $options['files'] = array_map(function($asset) {
-                return [
+
+                $file = [
                     'source' => $asset->id,
                     'options' => [
                         'type' => 'local',
@@ -191,11 +217,17 @@ abstract class Uploader extends Model implements UploaderInterface
                             'size' => $asset->size,
                             'type' => $asset->getMimeType()
                         ],
-                        'metadata' => [
-                            'poster' => $asset->kind == 'image' ? $asset->getUrl($this->transform) : null
-                        ]
+                        'metadata' => []
                     ]
                 ];
+
+                // TODO: @sam - Update to support transforms or alternative $asset->getUrl($this->transform)
+                if($this->imagePreview && $asset->kind == 'image')
+                {
+                    $file['options']['metadata']['poster'] = $asset->getUrl();
+                }
+                return $file;
+
             }, $assets);
         }
 
@@ -207,14 +239,12 @@ abstract class Uploader extends Model implements UploaderInterface
         return Json::encode($options, JSON_NUMERIC_CHECK);
     }
 
-    public function setRequestParams(array $params = null)
-    {
-        $this->_requestParams = $params;
-    }
-
     public function getRequestParams()
     {
-        return $this->_requestParams;
+        $config = Craft::$app->getConfig()->getGeneral();
+        return [
+            $config->csrfTokenName => Craft::$app->getRequest()->getCsrfToken()
+        ];
     }
 
     public function setMaxSize(int $size = null)
@@ -248,51 +278,30 @@ abstract class Uploader extends Model implements UploaderInterface
         return $this->_transform;
     }
 
+    public function beforeRender()
+    {
+        return null;
+    }
+
     public function render()
     {
         $this->validate();
-
-        $config = Craft::$app->getConfig()->getGeneral();
-        $view = Craft::$app->getView();
-
-        $view->registerAssetBundle(UploaditAssetBundle::class);
+        $this->beforeRender();
 
         $siteUrl = UrlHelper::siteUrl();
-        $formData = '';
-        $uploadRequestParams = $this->getRequestParams();
-        $uploadRequestParams['action'] = self::action();
-        $uploadRequestParams[$config->csrfTokenName] = Craft::$app->getRequest()->getCsrfToken();
-        foreach ($uploadRequestParams as $param => $value)
-        {
-            $formData .= "formData.append('{$param}', '{$value}');";
-        }
+
+        $view = Craft::$app->getView();
+        $view->registerAssetBundle(UploaditAssetBundle::class);
 
         $js = <<<JS
 var {$this->id}Element = document.getElementById('{$this->id}');
 var {$this->id}Uploader = FilePond.create({$this->id}Element, {$this->getFilePondOptions()});
-{$this->id}Uploader.on('init', function() {
-    {$this->id}Uploader.element.parentElement.classList.remove('hidden');
-});
-
+{$this->id}Uploader.on('init', function() { {$this->id}Uploader.element.parentElement.classList.remove('hidden'); });
 {$this->id}Uploader.setOptions({
     server: {
         url: '{$siteUrl}',
-        process: {
-            url: '/',
-            method: 'POST',
-            headers: {},
-            withCredentials: false,
-            ondata: (formData) => {
-                formData.getAll('{$this->name}').forEach(function(data) {
-                    if(data instanceof File) {
-                        formData.set('assets-upload', data);
-                    }
-                });
-                formData.delete('{$this->name}');
-                {$formData}
-                return formData;
-            }
-        },
+        process: {$this->_getServerProcessJs()},
+        remove: {$this->_getServerRemoveJs()},
         revert: null,
         restore: null,
         load: null,
@@ -302,7 +311,6 @@ var {$this->id}Uploader = FilePond.create({$this->id}Element, {$this->getFilePon
 JS;
 
         $view->registerJs($js, View::POS_END);
-        // $view->registerCss($this->getCustomCss());
 
         $templateMode = $view->getTemplateMode();
         $view->setTemplateMode(View::TEMPLATE_MODE_CP);
@@ -314,22 +322,69 @@ JS;
         return Template::raw($html);
     }
 
-    // Protected Methods
-    // =========================================================================
-
     // Private Methods
     // =========================================================================
 
-    // private function _checkTransformExists()
-    // {
-    //     if(is_string($this->transform) && !empty($this->transform))
-    //     {
-    //         if(!Craft::$app->getAssetTransforms()->getTransformByHandle($this->transform))
-    //         {
-    //             $this->addError('transform', Craft::t('uploadit', 'Asset transform does not exist'));
-    //             return false;
-    //         }
-    //     }
-    //     return true;
-    // }
+    private function _getServerProcessJs()
+    {
+        $action = self::actionProcess();
+        $formData = '';
+        foreach ($this->getRequestParams() as $param => $value)
+        {
+            $formData .= "formData.append('{$param}', '{$value}');";
+        }
+
+        return <<<JS
+{
+    url: '/',
+    method: 'POST',
+    headers: {},
+    withCredentials: false,
+    ondata: (formData) => {
+
+        var name = '{$this->name}';
+        if(name != 'assets-upload') {
+            formData.getAll(name).forEach(function(data) {
+                console.log(data);
+                if(data instanceof File) {
+                    formData.set('assets-upload', data);
+                }
+            });
+            formData.delete(name);
+        }
+        formData.append('action', '{$action}');
+        {$formData}
+        return formData;
+    }
+}
+JS;
+    }
+
+    private function _getServerRemoveJs()
+    {
+        $action = self::actionRemove();
+        if(!$action || !$this->enableDeleteAssets)
+        {
+            return 'null';
+        }
+
+        return <<<JS
+function (source, load, error) {
+
+    // When deleting from field, should we check if in use anywhere else to allow delete?
+
+    // Should somehow send `source` to server so server can remove the file with this source
+    console.log('LETS REMOVE ', source);
+    if(true)
+    {
+        error('Asset could not be removed at source');
+    }
+    else
+    {
+        load();
+    }
+}
+JS;
+    }
+
 }

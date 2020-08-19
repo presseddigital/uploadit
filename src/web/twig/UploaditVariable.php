@@ -2,7 +2,7 @@
 namespace presseddigital\uploadit\web\twig;
 
 use presseddigital\uploadit\Uploadit;
-use presseddigital\uploadit\models\{FieldUploader, VolumeUploader, UserPhotoUploader};
+use presseddigital\uploadit\models\{FieldUploader, VolumeUploader, AvatarUploader};
 
 use Craft;
 use yii\di\ServiceLocator;
@@ -23,31 +23,19 @@ class UploaditVariable extends ServiceLocator
         $this->plugin = Uploadit::$plugin;
     }
 
-    // Field Uploader
-    // =========================================================================
-
     public function field(array $config = [])
     {
-        $uploader = new FieldUploader($config);
-        return $uploader->render();
+        return (new FieldUploader($config))->render() ?? '';
     }
 
-    // Volume Uploader
-    // =========================================================================
-
-    public function volume()
+    public function volume(array $config = [])
     {
-        $uploader = new VolumeUploader($config);
-        return $uploader->render();
+        return (new VolumeUploader($config))->render() ?? '';
     }
 
-    // User Photo Uploader
-    // =========================================================================
-
-    public function userPhoto()
+    public function avatar(array $config = [])
     {
-        $uploader = new UserPhotoUploader($config);
-        return $uploader->render();
+        return (new AvatarUploader($config))->render() ?? '';
     }
 
 }

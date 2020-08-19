@@ -3,10 +3,7 @@ namespace presseddigital\uploadit\base;
 
 interface UploaderInterface
 {
-    // Static
-    // =========================================================================
-
     public static function type(): string;
-    public static function action(): string;
-
+    public static function actionProcess(): string;
+    public static function actionRemove(): string;
 }

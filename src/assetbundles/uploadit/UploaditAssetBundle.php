@@ -13,6 +13,8 @@ class UploaditAssetBundle extends AssetBundle
     {
         $this->baseUrl = 'https://unpkg.com/';
         $this->js = [
+            'filepond-plugin-image-crop/dist/filepond-plugin-image-crop.min.js',
+            'filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.min.js',
             'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.js',
             'filepond-plugin-image-resize/dist/filepond-plugin-image-resize.min.js',
             'filepond-plugin-image-validate-size/dist/filepond-plugin-image-validate-size.min.js',
@@ -39,13 +41,14 @@ class UploaditAssetBundle extends AssetBundle
     {
         parent::registerAssetFiles($view);
         $view->registerJs('FilePond.registerPlugin(
+            FilePondPluginImageResize,
+            FilePondPluginImageCrop,
+            FilePondPluginImageExifOrientation,
+            FilePondPluginImageValidateSize,
             FilePondPluginImagePreview,
-            FilePondPluginFilePoster,
             FilePondPluginFileValidateSize,
             FilePondPluginFileValidateType,
-            FilePondPluginImageValidateSize,
-            FilePondPluginImageResize
+            FilePondPluginFilePoster
         );', View::POS_HEAD);
-        // $view->registerCss('[x-cloak] { display:none; }');
     }
 }

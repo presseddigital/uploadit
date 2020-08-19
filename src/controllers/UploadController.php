@@ -14,123 +14,40 @@ use craft\elements\Asset;
 
 class UploadController extends Controller
 {
-    // Protected Properties
+    // Protected
     // =========================================================================
 
-    protected $allowAnonymous = ['index', 'can-upload'];
+    protected $allowAnonymous = [];
 
     // Public Methods
     // =========================================================================
 
-    public function actionIndex()
+    public function actionProcess()
     {
         // AssetsController - actionSaveAsset()
         $response = Craft::$app->runAction('assets/upload');
 
-        // Response Errors
         if($response->data['error'] ?? false)
         {
             return $this->asErrorJson($response->data['error']);
         }
 
         return $this->asJson($response->data['assetId']);
-
-
-
-
-        // Asset
-        $asset = Craft::$app->getAssets()->getAssetById($response->data['assetId']);
-        if(!$asset)
-        {
-            return $this->asErrorJson(Craft::t('uploadit', 'Could not get uploaded asset.'));
-        }
-
-        // Is this a temporary upload?
-        if(!$asset->getUrl())
-        {
-            // TODO: Could we grab the asset and try and run the transform as a public url
-            //     : so it can be displayed on the front end.
-        }
-
-        // Settings
-        $request = Craft::$app->getRequest();
-        $name = $request->getParam('name', false);
-        $view = $request->getParam('view', false);
-        $transform = $request->getParam('transform', '');
-        $enableReorder = (bool)$request->getParam('enableReorder', false);
-        $enableRemove = (bool)$request->getParam('enableRemove', false);
-        $elementId = $request->getParam('elementId', false);
-        $saveOnUpload = (bool)$request->getParam('saveOnUpload', false);
-
-        // Save element on upload
-        if($saveOnUpload && $elementId)
-        {
-            $element = Craft::$app->getElements()->getElementById($elementId);
-            if($element)
-            {
-                $fieldName = str_replace(['fields[', '[]', ']'], '', $name);
-
-                $assetIds = $request->getParam('assetIds', '');
-                $assetIds = $assetIds && $assetIds != '' ? explode(',', $assetIds) : [];
-                $assetIds[] = $asset->id;
-
-                $element->setFieldValues([
-                    $fieldName => $assetIds
-                ]);
-
-                $elementSaved = Craft::$app->getElements()->saveElement($element);
-                if(!$elementSaved)
-                {
-                    return $this->asErrorJson(Craft::t('uploadit', 'Could not save uploaded asset.'));
-                }
-            }
-        }
-
-        // Preview
-        $html = Upload::renderTemplate('uploadit/_macros/_preview', [
-            'asset' => $asset,
-            'name' => $name,
-            'view' => $view,
-            'transform' => $transform,
-            'enableReorder' => $enableReorder,
-            'enableRemove' => $enableRemove,
-        ]);
-
-        // Result
-        return $this->asJson([
-            'success' => true,
-            'asset' => $response->data,
-            'html' => $html,
-            'image' => $asset->kind == 'image' ? ($asset->getUrl($transform) ?? $asset->getThumbUrl(800) ?? false) : false,
-            'saved' => $elementSaved ?? false
-        ]);
-
     }
 
-    public function actionCanUpload()
+    public function actionRemove()
     {
-        $this->requireAcceptsJson();
+        Craft::dd('Setup Remove Endpoint');
 
-        $currentUser = Craft::$app->getUser()->getIdentity();
-        if(!$currentUser)
-        {
-            return $this->asErrorJson(Craft::t('uploadit', 'Only logged in users can upload assets.'));
-        }
+        // AssetsController - actionSaveAsset()
+        // $response = Craft::$app->runAction('assets/upload');
 
-        // $volumeId = '44';
-        // $permission = 'viewVolume:'.$volumeId;
-        // $permission = 'saveAssetInVolume:'.$volumeId;
-        // $permission = 'createFoldersInVolume:'.$volumeId;
-        // $permission = 'deleteFilesAndFoldersInVolume:'.$volumeId;
-
-        // if (!Craft::$app->getUser()->checkPermission($permission))
+        // if($response->data['error'] ?? false)
         // {
-        //     return $this->asErrorJson(Craft::t('uploadit', 'You don\'t have permission to upload assets here.'));
+        //     return $this->asErrorJson($response->data['error']);
         // }
 
-        return $this->asJson([
-            'success' => true,
-        ]);
+        // return $this->asJson($response->data['assetId']);
     }
 
     public function actionUserPhoto()

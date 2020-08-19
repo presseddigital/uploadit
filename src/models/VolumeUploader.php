@@ -10,128 +10,122 @@ use craft\models\VolumeFolder;
 
 class VolumeUploader extends Uploader
 {
-
     // Static
     // =========================================================================
 
     public static function type(): string
     {
-        return self::TYPE_VOLUME;
+        return 'volume';
     }
 
-    // Public
+    // Properties
     // =========================================================================
 
-    public $volume;
-    public $folder;
+    private $_folder;
 
     // Public Methods
     // =========================================================================
 
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct();
-
-        // Populate
-        $this->setAttributes($attributes, false);
-
-        // Defaults
-        $this->enableReorder = false;
-        $this->enableRemove = false;
-    }
-
     public function rules()
     {
         $rules = parent::rules();
-        $rules[] = [['id'], 'required'];
-        $rules[] = [['target'], 'required', 'message' => Craft::t('uploadit', 'A valid volume and optional folder / path must be set.')];
+        $rules[] = [['folder'], 'required', 'message' => Craft::t('uploadit', 'A valid folder or volume is required.')];
+        $rules[] = [
+            ['folder'],
+            function ($attribute)
+            {
+                if(!$this->folder instanceof VolumeFolder)
+                {
+                    $this->addError('folder', Craft::t('app', '{attribute} is invalid', ['attribute' => Craft::t('app', 'Folder')]));
+                }
+            },
+        ];
         return $rules;
     }
 
-    public function setTarget(): bool
+    public function attributes()
     {
-        $folder = false;
-
-        // Folder model supplied
-        if($this->folder instanceof VolumeFolder)
-        {
-            return $this->_updateTarget($this->folder);
-        }
-
-        // Folder id supplied
-        if(is_numeric($this->folder))
-        {
-            $folder = Craft::$app->getAssets()->getFolderById((int) $this->folder);
-
-            // Folder is a duffer
-            if(!$folder)
-            {
-                $this->addError('folder', Craft::t('uploadit', 'We cant locate any folder by the id supplied.'));
-                return false;
-            }
-
-            // We have a folder
-            return $this->_updateTarget($folder);
-        }
-
-
-        // Get supplied volume
-        $volume = $this->volume instanceof VolumeInterface ? $this->volume : false;
-        if(!$volume)
-        {
-            $volume = Uploadit::$plugin->service->getVolumeByHandleOrId($this->volume);
-        }
-
-        // Volume is a duffer
-        if(!$volume)
-        {
-            $this->addError('volume', Craft::t('uploadit', 'We cant get a volume to work with.'));
-            return false;
-
-            // IDEA: Do we want to grab the first if nothing supplied
-            // if(!$targetVolume)
-            // {
-            //     $targetVolume = Uploadit::$plugin->service->getFirstViewableVolume();
-            // }
-        }
-
-        // Get volume top folder id
-        $folderId = Craft::$app->getVolumes()->ensureTopFolder($volume);
-        $folder = Craft::$app->getAssets()->getFolderById($folderId);
-        if(!$folder)
-        {
-            $this->addError('folder', Craft::t('uploadit', 'We cant get or create the top folder for the volume you supplied.'));
-            return false;
-        }
-
-        // Folder path supplied, lets ensure it exists on this volume
-        if(is_string($this->folder))
-        {
-            // if the folder is a path does it exist
-            $folderId = Craft::$app->getAssets()->ensureFolderByFullPathAndVolume($this->folder, $volume, false);
-            if(!$folderId)
-            {
-                $this->addError('folder', Craft::t('uploadit', 'We cant find the folder path in the volume supplied.'));
-                return false;
-            }
-            $folder = Craft::$app->getAssets()->getFolderById($folderId);
-            if(!$folder)
-            {
-                $this->addError('folder', Craft::t('uploadit', 'We cant create the folder at the path you supplied.'));
-                return false;
-            }
-        }
-
-        return $this->_updateTarget($folder);
+        $attributes = parent::attributes();
+        $attributes[] = 'folder';
+        return $attributes;
     }
 
-    private function _updateTarget(VolumeFolder $folder)
+    public function attributeLabels()
     {
-        // Set target and any uploader defaults
-        $this->target = [
-            'folderId' => $folder->id,
-        ];
+        $labels = parent::attributeLabels();
+        $labels['folder'] = Craft::t('app', 'Folder');
+        return $labels;
+    }
 
-        return true;
+    public function getRequestParams()
+    {
+        $params = parent::getRequestParams();
+        if($this->folder)
+        {
+            $params['folderId'] = $this->folder->id;
+        }
+        return $params;
+    }
+
+    public function beforeRender()
+    {
+        $this->allowReorder = false;
+    }
+
+    public function getFolder()
+    {
+        return $this->_folder;
+    }
+
+    public function setFolder($folder)
+    {
+        $this->_folder = false;
+        if($folder instanceof VolumeFolder)
+        {
+            $this->_folder = $folder;
+            return;
+        }
+
+        if(is_numeric($folder))
+        {
+            $this->_folder = Craft::$app->getAssets()->getFolderById((int)$folder);
+            return;
+        }
+
+        if($folder instanceof VolumeInterface)
+        {
+            $folderId = Craft::$app->getVolumes()->ensureTopFolder($folder);
+            $this->setFolder($folderId);
+            return;
+        }
+
+        $volume = $folder['volume'] ?? false;
+        if($volume)
+        {
+            switch (true)
+            {
+                case is_numeric($volume):
+                    $volume = Craft::$app->getVolumes()->getVolumeById((int)$volume);
+                    break;
+                case is_string($volume):
+                    $volume = Craft::$app->getVolumes()->getVolumeByHandle($volume);
+                    break;
+            }
+
+            if($volume instanceof VolumeInterface)
+            {
+                $path = $folder['path'] ?? false;
+                if($path)
+                {
+                    $this->setFolder(Craft::$app->getAssets()->ensureFolderByFullPathAndVolume($path, $volume, false));
+                    return;
+                }
+                else
+                {
+                    $this->setFolder($volume);
+                    return;
+                }
+            }
+        }
     }
 }

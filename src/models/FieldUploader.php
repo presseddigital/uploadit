@@ -27,15 +27,10 @@ class FieldUploader extends Uploader
     private $_element;
 
     public $name;
-    public $saveOnUpload = false;
+    // public $saveElementOnUpload = false;
 
     // Public Methods
     // =========================================================================
-
-    public function __construct(array $config = [])
-    {
-        parent::__construct($config);
-    }
 
     public function getField()
     {
@@ -96,7 +91,7 @@ class FieldUploader extends Uploader
             ['field'],
             function ($attribute)
             {
-                if(!($this->$attribute ?? null) instanceof FieldInterface)
+                if(!$this->field instanceof FieldInterface)
                 {
                     $this->addError('field', Craft::t('app', '{attribute} is invalid', ['attribute' => Craft::t('app', 'Field')]));
                 }
@@ -106,7 +101,7 @@ class FieldUploader extends Uploader
             ['element'],
             function ($attribute)
             {
-                if(!($this->$attribute ?? null) instanceof ElementInterface)
+                if(!$this->element instanceof ElementInterface)
                 {
                     $this->addError('element', Craft::t('app', '{attribute} is invalid', ['attribute' => Craft::t('app', 'Element')]));
                 }
@@ -115,18 +110,43 @@ class FieldUploader extends Uploader
         return $rules;
     }
 
-    public function render()
+    public function attributes()
+    {
+        $attributes = parent::attributes();
+        $attributes[] = 'field';
+        $attributes[] = 'element';
+        return $attributes;
+    }
+
+    public function attributeLabels()
+    {
+        $labels = parent::attributeLabels();
+        $labels['field'] = Craft::t('app', 'Field');
+        $labels['element'] = Craft::t('app', 'Element');
+        $labels['name'] = Craft::t('app', 'Name');
+        // $labels['saveElementOnUpload'] = Craft::t('uploadit', 'Save Element On Upload');
+        return $labels;
+    }
+
+    public function getRequestParams()
+    {
+        $params = parent::getRequestParams();
+        if($this->field && $this->element)
+        {
+            $params['fieldId'] = $this->field->id;
+            $params['elementId'] = $this->element->id;
+        }
+        // $params['save'] = $this->saveElementOnUpload;
+        return $params;
+    }
+
+    public function beforeRender()
     {
         if($this->field && $this->element)
         {
             $this->limit = $this->field->limit ? $this->field->limit : null;
             $this->allowedFileExtensions = Assets::getAllowedFileExtensionsByFieldKinds($this->field->allowedKinds);
-            $this->setRequestParams([
-                'fieldId' => $this->field->id,
-                'elementId' => $this->element->id,
-            ]);
         }
-        return parent::render();
     }
 
 }

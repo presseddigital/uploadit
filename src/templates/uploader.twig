@@ -18,8 +18,19 @@
         id: uploader.id,
         type: 'file',
         name: uploader.name ?? null,
-        multiple: uploader.multiple ?? null,
     }|filter %}
+
+    {% switch uploader.type %}
+
+        {% case 'field' %}
+
+        {% case 'volume' %}
+
+        {% case 'userPhoto' %}
+
+        {% default %}
+
+    {% endswitch %}
 
     <div class="hidden">
         <input {{ attr(attributes) }}>
