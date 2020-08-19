@@ -9,7 +9,7 @@ Use as a standalone uploader or as field in one of your forms:
 *   Reorder & remove uploads
 *   Asset previews
 *   Customisable
-*   It's Vanilla (Zero dependencies writtin in battle tested javascript)
+*   It's Vanilla (Zero dependencies written in battle tested javascript)
 
 ### Requirements
 
@@ -159,4 +159,4 @@ You can also define whether lists can give away, give and keep a copy (`clone`),
 
 Note: This plugin will become a paid add-on when the Craft Plugin store becomes available.
 
-Brought to you by [FRUIT](https://pressed.digital)
+Brought to you by [Pressed Digital](https://pressed.digital)
