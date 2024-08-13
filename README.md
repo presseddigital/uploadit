@@ -1,162 +1,30 @@
-# Uploadit plugin for Craft CMS 3.x
+# Uploadit
 
-The unausuming front end asset uploader for Craft 3.
-Use as a standalone uploader or as field in one of your forms:
+The unausuming front end asset uploader for Craft 3. Use as a standalone uploader or as field in one of your forms:
 
-## Features:
+## Requirements
 
-*   Drop to upload
-*   Reorder & remove uploads
-*   Asset previews
-*   Customisable
-*   It's Vanilla (Zero dependencies written in battle tested javascript)
+This plugin requires Craft CMS 4.11.0 or later, and PHP 8.0.2 or later.
 
-### Requirements
+## Installation
 
-This plugin requires Craft CMS 3.0.0-RC1 or later.
+You can install this plugin from the Plugin Store or with Composer.
 
-### Installation
+#### From the Plugin Store
 
-To install the plugin, follow these steps:
+Go to the Plugin Store in your project’s Control Panel and search for “Uploadit”. Then press “Install”.
 
-1.  Install with Composer via:
+#### With Composer
 
-        composer require presseddigital/uploadit
+Open your terminal and run the following commands:
 
-2.  In the Control Panel, go to Settings → Plugins and click the “Install” button for Uploadit.
+```bash
+# go to the project directory
+cd /path/to/my-project.test
 
-## Using Uploadit
+# tell Composer to load the plugin
+composer require presseddigital/uploadit
 
-**Options**
-
-    {{ craft.uploadit.uploader({
-    	id: 'myUid',
-    	name: 'myFieldName',
-        assets: [],
-
-        field: 'images',
-        element: entry,
-
-        volume: 'myvolume',
-    	folder: 'my/folder/path',
-
-        preview: 'image',
-        transform: 'square',
-
-        limit: 5,
-        allowReorder: true,
-        allowRemove: true,
-        customClass: 'custom--class',
-
-    }) }}
-
-#### `id` option
-
-To drag elements from one list into another, both lists must have the same `group` value.
-You can also define whether lists can give away, give and keep a copy (`clone`), and receive elements.
-
-*   name: `String` — group name
-*   pull: `true|false|'clone'|function` — ability to move from the list. `clone` — copy the item, rather than move.
-*   put: `true|false|["foo", "bar"]|function` — whether elements can be added from other lists, or an array of group names from which elements can be taken.
-*   revertClone: `boolean` — revert cloned element to initial position after moving to a another list.
-
----
-
-#### `name` option
-
-To drag elements from one list into another, both lists must have the same `group` value.
-You can also define whether lists can give away, give and keep a copy (`clone`), and receive elements.
-
-*   name: `String` — group name
-*   pull: `true|false|'clone'|function` — ability to move from the list. `clone` — copy the item, rather than move.
-*   put: `true|false|["foo", "bar"]|function` — whether elements can be added from other lists, or an array of group names from which elements can be taken.
-*   revertClone: `boolean` — revert cloned element to initial position after moving to a another list.
-
----
-
-#### `assets` option
-
-To drag elements from one list into another, both lists must have the same `group` value.
-You can also define whether lists can give away, give and keep a copy (`clone`), and receive elements.
-
-*   name: `String` — group name
-*   pull: `true|false|'clone'|function` — ability to move from the list. `clone` — copy the item, rather than move.
-*   put: `true|false|["foo", "bar"]|function` — whether elements can be added from other lists, or an array of group names from which elements can be taken.
-*   revertClone: `boolean` — revert cloned element to initial position after moving to a another list.
-
----
-
-#### `field` option
-
-To drag elements from one list into another, both lists must have the same `group` value.
-You can also define whether lists can give away, give and keep a copy (`clone`), and receive elements.
-
-*   name: `String` — group name
-*   pull: `true|false|'clone'|function` — ability to move from the list. `clone` — copy the item, rather than move.
-*   put: `true|false|["foo", "bar"]|function` — whether elements can be added from other lists, or an array of group names from which elements can be taken.
-*   revertClone: `boolean` — revert cloned element to initial position after moving to a another list.
-
----
-
-#### `element` option
-
-To drag elements from one list into another, both lists must have the same `group` value.
-You can also define whether lists can give away, give and keep a copy (`clone`), and receive elements.
-
-*   name: `String` — group name
-*   pull: `true|false|'clone'|function` — ability to move from the list. `clone` — copy the item, rather than move.
-*   put: `true|false|["foo", "bar"]|function` — whether elements can be added from other lists, or an array of group names from which elements can be taken.
-*   revertClone: `boolean` — revert cloned element to initial position after moving to a another list.
-
----
-
-#### `volume` option
-
-To drag elements from one list into another, both lists must have the same `group` value.
-You can also define whether lists can give away, give and keep a copy (`clone`), and receive elements.
-
-*   name: `String` — group name
-*   pull: `true|false|'clone'|function` — ability to move from the list. `clone` — copy the item, rather than move.
-*   put: `true|false|["foo", "bar"]|function` — whether elements can be added from other lists, or an array of group names from which elements can be taken.
-*   revertClone: `boolean` — revert cloned element to initial position after moving to a another list.
-
----
-
-**Example Standalone Usage**
-
-    {{ craft.uploadit.uploader({
-    	id: 'myUid',
-    	name: 'myFieldName',
-    	assets: [],
-    	volume: 'myvolume',
-    	folder: 'my/folder/path',
-    	preview: 'image',
-    	transform: 'square',
-        themeColour: '#ff00ff',
-    }) }}
-
-<p align="left"><img width="450px" src="resources/img/customise-labels.png" alt="Linkit"></a></p>
-
-**Example Form Usage**
-
-    {{ craft.uploadit.uploader({
-    	id: 'myUid',
-    	name: 'myFieldName',
-        assets: [],
-        field: 'images',
-        element: 345678,
-        preview: 'image',
-        transform: 'square',
-        themeColour: '#ff00ff',
-    }) }}
-
-<p align="left"><img width="450px" src="resources/img/customise-labels.png" alt="Linkit"></a></p>
-
-## Roadmap
-
-*   [ ] Better validation
-*   [ ] Translate javascript strings
-
-Note: This plugin will become a paid add-on when the Craft Plugin store becomes available.
-
-Brought to you by [Pressed Digital](https://pressed.digital)
+# tell Craft to install the plugin
+./craft plugin/install uploadit
+```

@@ -1,44 +1,49 @@
 {
     "name": "presseddigital/uploadit",
-    "description": "The (sort of) unausuming front end asset uploader for Craft 3.",
+    "description": "The unausuming front end asset uploader for Craft 3. Use as a standalone uploader or as field in one of your forms:",
     "type": "craft-plugin",
-    "version": "1.0.1",
-    "keywords": [
-        "craft",
-        "cms",
-        "craftcms",
-        "craft-plugin",
-        "asset uploader",
-        "front end",
-        "uploadit"
-    ],
-    "support": {
-        "docs": "https://github.com/presseddigital/uploadit/blob/master/README.md",
-        "issues": "https://github.com/presseddigital/uploadit/issues"
-    },
     "license": "proprietary",
-    "authors": [
-        {
-            "name": "Pressed Digital",
-            "homepage": "http://pressed.digital"
-        }
-    ],
+    "support": {
+        "email": "hi@pressed.digital",
+        "issues": "https://github.com/presseddigital/uploadit/issues?state=open",
+        "source": "https://github.com/presseddigital/uploadit",
+        "docs": "https://github.com/presseddigital/uploadit",
+        "rss": "https://github.com/presseddigital/uploadit/releases.atom"
+    },
     "require": {
-        "craftcms/cms": "^3.5.0",
-        "ralouphie/mimey": "^1.0 || ^2.0"
+        "php": ">=8.0.2",
+        "craftcms/cms": "^4.11.0"
+    },
+    "require-dev": {
+        "craftcms/ecs": "dev-main",
+        "craftcms/phpstan": "dev-main"
     },
     "autoload": {
         "psr-4": {
-          "presseddigital\\uploadit\\": "src/"
+            "presseddigital\\uploadit\\": "src/"
         }
     },
     "extra": {
-        "name": "Uploadit",
         "handle": "uploadit",
-        "hasCpSettings": true,
-        "hasCpSection": false,
-        "changelogUrl": "https://raw.githubusercontent.com/presseddigital/uploadit/master/CHANGELOG.md",
-        "class": "presseddigital\\uploadit\\Uploadit",
-        "components": {}
+        "name": "Uploadit",
+        "developer": "Pressed Digital",
+        "documentationUrl": "https://github.com/presseddigital/uploadit",
+        "class": "presseddigital\\uploadit\\Uploadit"
+    },
+    "scripts": {
+        "check-cs": "ecs check --ansi",
+        "fix-cs": "ecs check --ansi --fix",
+        "phpstan": "phpstan --memory-limit=1G"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.2"
+        },
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
     }
 }
+

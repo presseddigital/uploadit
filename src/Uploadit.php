@@ -1,60 +1,64 @@
 <?php
+
 namespace presseddigital\uploadit;
 
-use presseddigital\uploadit\models\Settings;
-use presseddigital\uploadit\services\Upload as UploadService;
-use presseddigital\uploadit\web\twig\Extension;
-
 use Craft;
+use craft\base\Model;
 use craft\base\Plugin;
-use craft\services\Plugins;
-use craft\events\PluginEvent;
-use craft\web\UrlManager;
-use craft\web\twig\variables\CraftVariable;
-use craft\events\RegisterUrlRulesEvent;
-use yii\base\Event;
+use presseddigital\uploadit\models\Settings;
 
+/**
+ * Uploadit plugin
+ *
+ * @method static Uploadit getInstance()
+ * @method Settings getSettings()
+ * @author Pressed Digital <hi@pressed.digital>
+ * @copyright Pressed Digital
+ * @license https://craftcms.github.io/license/ Craft License
+ */
 class Uploadit extends Plugin
 {
-    // Static Properties
-    // =========================================================================
+    public string $schemaVersion = '1.0.0';
+    public bool $hasCpSettings = true;
 
-    public static $plugin;
-    public static $settings;
-    public static $view;
-    public static $variable;
+    public static function config(): array
+    {
+        return [
+            'components' => [
+                // Define component configs here...
+            ],
+        ];
+    }
 
-    // Public Properties
-    // =========================================================================
-
-    public $schemaVersion = '1.0.0';
-
-    // Public Methods
-    // =========================================================================
-
-    public function init()
+    public function init(): void
     {
         parent::init();
-        self::$plugin = $this;
-        self::$view = Craft::$app->getView();
-        self::$settings = $this->getSettings();
 
-        $this->setComponents([
-            'upload' => UploadService::class,
-        ]);
+        $this->attachEventHandlers();
 
-        self::$view->registerTwigExtension(new Extension());
-
-        Craft::info(Craft::t('uploadit', '{name} plugin loaded', ['name' => $this->name]), __METHOD__);
+        // Any code that creates an element query or loads Twig should be deferred until
+        // after Craft is fully initialized, to avoid conflicts with other plugins/modules
+        Craft::$app->onInit(function() {
+            // ...
+        });
     }
 
-
-    // Protected Methods
-    // =========================================================================
-
-    protected function createSettingsModel()
+    protected function createSettingsModel(): ?Model
     {
-        return new Settings();
+        return Craft::createObject(Settings::class);
     }
 
+    protected function settingsHtml(): ?string
+    {
+        return Craft::$app->view->renderTemplate('uploadit/_settings.twig', [
+            'plugin' => $this,
+            'settings' => $this->getSettings(),
+        ]);
+    }
+
+    private function attachEventHandlers(): void
+    {
+        // Register event handlers here ...
+        // (see https://craftcms.com/docs/4.x/extend/events.html to get started)
+    }
 }

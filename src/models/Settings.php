@@ -1,24 +1,13 @@
 <?php
+
 namespace presseddigital\uploadit\models;
 
+use Craft;
 use craft\base\Model;
 
+/**
+ * Uploadit settings
+ */
 class Settings extends Model
 {
-    // Public Properties
-    // =========================================================================
-
-    public $includeFilePondLibrary = true;
-
-    // Public Methods
-    // =========================================================================
-
-	public function rules(): array
-    {
-        return [
-            ['includeFilePondLibrary', 'boolean'],
-            ['includeFilePondLibrary', 'default', 'value' => true],
-        ];
-    }
-
 }
