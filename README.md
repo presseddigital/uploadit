@@ -28,3 +28,36 @@ composer require presseddigital/uploadit
 # tell Craft to install the plugin
 ./craft plugin/install uploadit
 ```
+
+## Features:
+
+*   Drop to upload
+*   Reorder & remove uploads
+*   Asset previews
+*   Customisable
+*   It's Vanilla (Zero dependencies writtin in battle tested javascript)
+
+## Usage
+
+```html
+    {{ craft.upload.uploader({
+    	id: 'myUid',
+    	name: 'myFieldName',
+        assets: [],
+
+        field: 'images',
+        element: entry,
+
+        volume: 'myvolume',
+    	folder: 'my/folder/path',
+
+        preview: 'image',
+        transform: 'square',
+
+        limit: 5,
+        allowReorder: true,
+        allowRemove: true,
+        customClass: 'custom--class',
+
+    }) }}
+```

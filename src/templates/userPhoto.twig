@@ -1,0 +1,86 @@
+{% import "uploadit/_macros" as macros %}
+
+{% set uploader = uploader ?? false %}
+{% if uploader and not uploader.hasErrors() %}
+
+    {# Classes & Defaults #}
+    {% set transform = uploader.transform ?? '' %}
+    {% set imageClasses = uploader.imageClasses ?? '' %}
+
+    {% set classes = [
+        'uploadit--userPhotoUploader',
+        uploader.customClass ? uploader.customClass : null,
+    ]|filter|join(' ') %}
+
+     {% set defaultUserImageUrl = uploader.default.url(transform)|default(craft.app.assetManager.getPublishedUrl('@presseddigital/uploadit/assetbundles/uploadit/build/images', true, 'user.png')) %}
+
+    {# Calculate Dimentions #}
+    {% set width = uploader.width ?? false %}
+    {% set height = uploader.height ?? false %}
+    {% if not (width and height) %}
+        {% if not uploader.default and not uploader.photo %}
+            {% set transformData = transform ? craft.app.assetTransforms.getTransformByHandle(transform) : false %}
+            {% set width = transformData.width|default(uploader.defaultWidth) %}
+            {% set height = transformData.height|default(uploader.defaultHeight) %}
+        {% else %}
+            {% set width = uploader.default.getWidth(transform)|default(uploader.defaultWidth) %}
+            {% set height = uploader.default.getHeight(transform)|default(uploader.defaultHeight) %}
+        {% endif %}
+    {% endif %}
+
+    {# Render #}
+    <div id="{{ uploader.id }}" class="{{ classes }}">
+
+        <div class="uploadit--inner{{ uploader.round ? ' uploadit--round' }}" style="width:{{ width }}px;height:{{ height }}px;">
+
+            <div class="uploadit--defaultUserPhotoWrapper{{ uploader.photo ? ' uploadit--isHidden' }}"">
+                <img class="uploadit--defaultUserPhoto {{ imageClasses }}" src="{{ defaultUserImageUrl }}" alt="Default User Photo" />
+            </div>
+
+            <div class="uploadit--userPhoto{{ not uploader.photo ? ' uploadit--isHidden' }}">
+
+                {% if uploader.enableRemove %}
+                    <a class="uploadit--remove">{{ macros.icon('close') }}</a>
+                {% endif %}
+
+                <img class="uploadit--userPhotoImage {{ imageClasses }}" src="{{ uploader.photo.url(transform)|default('') }}" alt="User Photo" />
+
+            </div>
+
+            <a href="javascript:;" class="uploadit--upload">
+                <input type="file" name="uploaditAssetInput" style="display:none;" />
+            </a>
+
+            <div class="uploadit--controls">
+                <div class="uploadit--controls-inner">
+
+                    <a href="javascript:;" class="uploadit--upload">
+                        <span class="uploadit--label">{{ uploader.selectText }}</span>
+                    </a>
+                    <input type="file" name="uploaditUserPhotoInput" style="display:none;"/>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="uploadit--preload uploadit--isHidden"></div>
+        <div class="uploadit--errors uploadit--isHidden"></div>
+
+    </div>
+
+{% else %}
+
+    <div class="uploadit--notice">
+        {% if uploader.hasErrors() %}
+            <p>{{ 'Uploader Not Ready'|t('uploadit') }}</p>
+            <ul class="uploadit--noticeErrors">
+                {% for error in uploader.getErrors() %}
+                    <li>{{ error|filter|join(', ') }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>{{ 'Uploader Not Found'|t('uploadit') }}</p>
+        {% endif %}
+    </div>
+
+{% endif %}

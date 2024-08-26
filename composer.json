@@ -1,7 +1,8 @@
 {
     "name": "presseddigital/uploadit",
-    "description": "The unausuming front end asset uploader for Craft 3. Use as a standalone uploader or as field in one of your forms:",
+    "description": "The unausuming front end asset uploader for Craft 4. Use as a standalone uploader or as field in one of your forms:",
     "type": "craft-plugin",
+    "version": "4.0.0",
     "license": "proprietary",
     "support": {
         "email": "hi@pressed.digital",

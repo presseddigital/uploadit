@@ -6,6 +6,8 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use presseddigital\uploadit\models\Settings;
+use presseddigital\uploadit\services\Upload as UploadService;
+use presseddigital\uploadit\web\twig\Extension;
 
 /**
  * Uploadit plugin
@@ -18,6 +20,9 @@ use presseddigital\uploadit\models\Settings;
  */
 class Uploadit extends Plugin
 {
+    public static $plugin;
+    public static $settings;
+
     public string $schemaVersion = '1.0.0';
     public bool $hasCpSettings = true;
 
@@ -25,7 +30,7 @@ class Uploadit extends Plugin
     {
         return [
             'components' => [
-                // Define component configs here...
+                'upload' => UploadService::class,
             ],
         ];
     }
@@ -33,12 +38,16 @@ class Uploadit extends Plugin
     public function init(): void
     {
         parent::init();
+        self::$plugin = $this;
+        self::$settings = $this->getSettings();
 
         $this->attachEventHandlers();
 
         Craft::$app->onInit(function() {
             // ...
         });
+
+        Craft::$app->getView()->registerTwigExtension(new Extension());
     }
 
     protected function createSettingsModel(): ?Model

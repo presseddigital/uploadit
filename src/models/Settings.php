@@ -10,4 +10,13 @@ use craft\base\Model;
  */
 class Settings extends Model
 {
+    public $includeFilePondLibrary = true;
+
+	public function rules(): array
+    {
+        return [
+            ['includeFilePondLibrary', 'boolean'],
+            ['includeFilePondLibrary', 'default', 'value' => true],
+        ];
+    }
 }
